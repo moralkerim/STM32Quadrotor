@@ -54,6 +54,9 @@
 #define ACC_Y_ADDR 0x3D
 #define ACC_Z_ADDR 0x3F
 
+#define ROLL_OFFSET   0.45
+#define PITCH_OFFSET -5.2
+
 #define I2C_READ 0x01
 
 #ifndef PWM_UPPER
@@ -63,6 +66,7 @@
 
 #define CH_NUM 8
 #define CH0 5000
+#define EMERGENCY_CH 5
 
 /* USER CODE END PM */
 
@@ -72,6 +76,7 @@ I2C_HandleTypeDef hi2c1;
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim4;
 
 UART_HandleTypeDef huart2;
 
@@ -107,6 +112,8 @@ volatile int IC_Val2, IC_Val1, Diff, Diff_debug;
 volatile short int i;
 int ch[CH_NUM+1];
 unsigned short int sync;
+long int delay_timer, current_time, arm_timer, test_timer, disarm_timer;
+bool delay_start, arm_start, armed, motor_start, disarm_start;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -117,12 +124,15 @@ static void MX_TIM2_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM3_Init(void);
+static void MX_TIM4_Init(void);
 /* USER CODE BEGIN PFP */
 void MPU6050_Baslat(void);
 int16_t GyroOku (uint8_t addr);
 float GyroErr(uint8_t addr);
 void PWMYaz();
 void MotorBaslat(void);
+void Check_Arm(void);
+void Check_Disarm(void);
 int _write(int32_t file, uint8_t *ptr, int32_t len);
 /* USER CODE END PFP */
 
@@ -136,6 +146,15 @@ int __io_putchar(int ch)
  return(ch);
 }
 
+void Delay(long millis) {
+	current_time = delay_timer;
+	while(delay_timer < current_time + millis) {
+		printf("Do nothing...");
+	}
+}
+
+
+
 /* USER CODE END 0 */
 
 /**
@@ -145,6 +164,8 @@ int __io_putchar(int ch)
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+	//Delay(500);
+	//HAL_Delay(1000);
 
   /* USER CODE END 1 */
 
@@ -154,7 +175,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+  HAL_Delay(2000);
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -171,6 +192,7 @@ int main(void)
   MX_TIM1_Init();
   MX_USART2_UART_Init();
   MX_TIM3_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
 
   MPU6050_Baslat();
@@ -193,9 +215,7 @@ int main(void)
   //PPM Input Capture Kanalları
   //HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_2);
   HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_2);
-
-  MotorBaslat();
-  printf("Starting...\r\n");
+  //printf("Starting...\r\n");
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -205,7 +225,17 @@ int main(void)
 	  //micros = __HAL_TIM_GET_COUNTER(&htim3);
 	  //sprintf(buf,"%d\r\n",int(roll)); // @suppress("Float formatting support")
 	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), 1000);
-	  PWMYaz();
+	  Check_Arm();
+	  Check_Disarm();
+	  if(armed) {
+		  if(!motor_start) {
+			  MotorBaslat();
+			  motor_start = true;
+		  }
+
+		  PWMYaz();
+	  }
+
 	  //HAL_Delay(250);
 
     /* USER CODE END WHILE */
@@ -468,6 +498,51 @@ static void MX_TIM3_Init(void)
 }
 
 /**
+  * @brief TIM4 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM4_Init(void)
+{
+
+  /* USER CODE BEGIN TIM4_Init 0 */
+
+  /* USER CODE END TIM4_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM4_Init 1 */
+
+  /* USER CODE END TIM4_Init 1 */
+  htim4.Instance = TIM4;
+  htim4.Init.Prescaler = 32000-1;
+  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim4.Init.Period = 65535;
+  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM4_Init 2 */
+
+  /* USER CODE END TIM4_Init 2 */
+
+}
+
+/**
   * @brief USART2 Initialization Function
   * @param None
   * @retval None
@@ -521,6 +596,9 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
+
   /*Configure GPIO pin : LED_Pin */
   GPIO_InitStruct.Pin = LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -535,6 +613,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : PA15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
 }
 
 /* USER CODE BEGIN 4 */
@@ -545,6 +630,52 @@ void MPU6050_Baslat(void) {
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, GYRO_CONF_REG, 1, &config, 1, 5); //Gyro 250 d/s'ye ayarlandi.
 	config = 0x08;
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, ACC_CONF_REG, 1, &config, 1, 5); //Acc +-8g'ye ayarlandi.
+}
+
+
+void Check_Arm() {
+	if(!armed) {
+		if((ch[2] < 1100) && (ch[3] > 1700)) {
+				if(!arm_start){
+					arm_timer = HAL_GetTick();
+					arm_start = true;
+				}
+
+				if(HAL_GetTick() - arm_timer > 3000) {
+					armed = true;
+					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
+
+				}
+
+		}
+
+		else {
+			arm_start = false;
+		}
+	}
+
+}
+
+void Check_Disarm() {
+	if(armed) {
+		if((ch[2] < 1100) && (ch[3] < 1100)) {
+				if(!disarm_start){
+					disarm_timer = HAL_GetTick();
+					disarm_start = true;
+				}
+
+				if(HAL_GetTick() - disarm_timer > 3000) {
+					armed = false;
+					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
+
+				}
+
+		}
+
+		else {
+			disarm_start = false;
+		}
+	}
 }
 
 int16_t GyroOku (uint8_t addr) {
@@ -568,10 +699,19 @@ float GyroErr(uint8_t addr) {
 
 
 void PWMYaz() {
-	  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,controller_output[0]);
-	  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,controller_output[1]);
-	  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,controller_output[2]);
-	  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,controller_output[3]);
+	  if(ch[EMERGENCY_CH-1] < 1500) {
+		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,controller_output[0]);
+		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,controller_output[1]);
+		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,controller_output[2]);
+		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,controller_output[3]);
+	  }
+
+	  else {
+		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,1000);
+		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,1000);
+		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,1000);
+		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,1000);
+	  }
 }
 
 
@@ -582,6 +722,7 @@ void MotorBaslat(void) {
 	  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,1000);
 	  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,1000);
 	  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,1000);
+	 // Delay(600);
 	HAL_Delay(1000);
 }
 
@@ -624,8 +765,8 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  pitch_acc=asin(accY/acctop)*57.324;					//İvme ölçerden hesaplanan pitch açısı
 
 		  EKF.Run(gyro,acc);
-		  state.angles[0]  	  = EKF.state.angles[0];
-		  state.angles[1] 	  = EKF.state.angles[1];
+		  state.angles[0]  	  = EKF.state.angles[0] + ROLL_OFFSET;
+		  state.angles[1] 	  = EKF.state.angles[1] + PITCH_OFFSET;
 		  state.angles[2]   = 	EKF.state.angles[2];
 
 		  state.rates[0] = gyroX;
@@ -635,7 +776,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		 // printf("roll: %d\r\n",int(roll));
 
 
-		  controller.Run(state, state_des);
+		  controller.Run(state, state_des, ch[2]);
 		  controller_output = controller.controller_output_pwm;
 		  w1 = controller_output[0];
 		  w2 = controller_output[1];
@@ -677,6 +818,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 				state_des.angles[0] =  pid.pwm2ang(ch[0]);
 				state_des.angles[1] =  pid.pwm2ang(ch[1]);
 				state_des.angles[2] =  0;
+				state_des.rates[2] = pid.pwm2rate(ch[3]);
 
 				i++;
 				i = i % (CH_NUM+1);
