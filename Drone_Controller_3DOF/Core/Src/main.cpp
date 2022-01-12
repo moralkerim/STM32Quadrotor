@@ -804,7 +804,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 				}
 				//printf("Diff: %d\n",Diff);
 				ch[i] = Diff;
-				if(!sync) {
+				if(1) {
 					if(ch[i] > CH0) {
 						//ch[CH_NUM] = ch[i];
 						i = -1;
