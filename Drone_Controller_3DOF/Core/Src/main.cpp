@@ -784,7 +784,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  w4 = controller_output[3];
 		  HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_1);
 
-	}
+		}
 	}
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
