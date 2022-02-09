@@ -18,7 +18,7 @@ main.cpp:587:13:void MX_GPIO_Init()	40	static
 main.cpp:630:6:void MPU6050_Baslat()	32	static
 main.cpp:640:6:void Check_Arm()	8	static
 main.cpp:663:6:void Check_Disarm()	8	static
-main.cpp:685:6:void TelemPack()	12	static
+main.cpp:685:6:void TelemPack()	16	static
 main.cpp:697:9:int16_t GyroOku(uint8_t)	40	static
 main.cpp:704:7:float GyroErr(uint8_t)	24	static
 main.cpp:717:6:void PWMYaz()	8	static

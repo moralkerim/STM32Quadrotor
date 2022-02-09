@@ -683,14 +683,14 @@ void Check_Disarm() {
 }
 
 void TelemPack() {
-	  telem_pack.attitude.roll  = 10;
-	  telem_pack.attitude.pitch = 8;
-	  telem_pack.attitude.yaw   = 1;
+	  telem_pack.attitude.roll  = state.angles[0];
+	  telem_pack.attitude.pitch = state.angles[1];
+	  telem_pack.attitude.yaw   = state.angles[2];
 
-	  telem_pack.pwm.w1 = 1000;
-	  telem_pack.pwm.w2 = 1000;
-	  telem_pack.pwm.w3 = 1000;
-	  telem_pack.pwm.w4 = 1000;
+	  telem_pack.pwm.w1 = controller_output[0];
+	  telem_pack.pwm.w2 = controller_output[1];
+	  telem_pack.pwm.w3 = controller_output[2];
+	  telem_pack.pwm.w4 = controller_output[3];
 	  memcpy(buf,&telem_pack,sizeof(telem_pack));
 }
 
