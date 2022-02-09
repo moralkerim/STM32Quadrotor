@@ -113,7 +113,7 @@ volatile int IC_Val2, IC_Val1, Diff, Diff_debug;
 volatile short int i;
 int ch[CH_NUM+1];
 unsigned short int sync;
-long int delay_timer, current_time, arm_timer, test_timer, disarm_timer;
+long int delay_timer, current_time, arm_timer, test_timer, disarm_timer, sent_time;
 bool delay_start, arm_start, armed, motor_start, disarm_start;
 /* USER CODE END PV */
 
@@ -226,9 +226,14 @@ int main(void)
   {
 	  //micros = __HAL_TIM_GET_COUNTER(&htim3);
 	  //sprintf(buf,"%d\r\n",int(roll)); // @suppress("Float formatting support")
-	  TelemPack();
+	  if(HAL_GetTick()- sent_time > 100) {
+		  TelemPack();
+		  HAL_UART_Transmit(&huart2, (uint8_t*)buf, sizeof(struct telem_pack), 1000);
+		  sent_time = HAL_GetTick();
+
+	  }
 	  //sprintf(buf,"%s\n","test");
-	  HAL_UART_Transmit(&huart2, (uint8_t*)buf, sizeof(struct telem_pack), 1000);
+
 	  Check_Arm();
 	  Check_Disarm();
 	  if(armed) {
@@ -241,8 +246,6 @@ int main(void)
 	  }
 
 
-
-	  HAL_Delay(100);
 
     /* USER CODE END WHILE */
 

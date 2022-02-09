@@ -14,36 +14,50 @@ mySocket.bind((ip, port))
 x_len = 200         # Number of points to display
 y_range = [-30, 30]  # Range of possible Y values to display
 
-time = list(range(0, 200))
+time = list(range(0, x_len))
 roll =  [0] * x_len
-pitch = []
+pitch = [0] * x_len
 i = 0;
 style.use('fivethirtyeight')
 
 fig = plt.figure()
-ax = fig.add_subplot(1,1,1)
+fig.set_size_inches(10, 5, forward=True)
+ax = fig.add_subplot(2,1,1)
+ay = fig.add_subplot(2,1,2)
 ax.set_ylim(y_range)
-line, = ax.plot(time, roll)
-
+ay.set_ylim(y_range)
+linex, = ax.plot(time, roll)
+liney, = ay.plot(time, pitch,'tab:red')
+ax.set_title("Roll")
+ax.set(ylabel = "Degrees")
+ay.set_title("Pitch")
 
     
 print("server {} portunu dinliyor.".format(port))
 
-def animate(i,roll):
+def animate(i,roll, pitch):
 
     (data, addr) = mySocket.recvfrom(1024)
 
 
     data_org = struct.unpack('<fffHHHH', data)
+    with open('example.txt', "a") as file:
+        file.write("\n")
+        file.write(str(data_org))
     print(data_org)
     #print(data)
 
-    roll.append(data_org[0])   
-    roll = roll[-x_len:]
-    line.set_ydata(roll)
-    return line,
+    roll.append(data_org[0])  
+    pitch.append(data_org[1])
     
-ani = animation.FuncAnimation(fig, animate, fargs=(roll,), interval=50, blit=True)
+    roll = roll[-x_len:]
+    pitch = pitch[-x_len:]
+    
+    linex.set_ydata(roll)
+    liney.set_ydata(pitch)
+    return linex, liney,
+    
+ani = animation.FuncAnimation(fig, animate, fargs=(roll, pitch,), interval=50, blit=True)
 plt.show()
 
 
