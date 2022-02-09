@@ -1,17 +1,17 @@
 struct attitude {
-    char roll[6];
-    char pitch[6];
-    char yaw[6];
-};
+    float roll;
+    float pitch;
+    float yaw;
+}__attribute__ ((packed));
 
 struct pwm {
-  char w1[4];
-  char w2[4];
-  char w3[4];
-  char w4[4];
-};
+	unsigned short w1;
+	unsigned short w2;
+	unsigned short w3;
+	unsigned short w4;
+}__attribute__ ((packed));
 
 struct telem_pack {
   struct attitude attitude;
   struct pwm pwm;
-};
+}__attribute__ ((packed));

@@ -29,6 +29,7 @@
 #include <math.h>
 #include "Kalman.hpp"
 #include "Controller.hpp"
+#include "TelemData.h"
 
 /* USER CODE END Includes */
 
@@ -90,22 +91,22 @@ float e, e_eski; //PID hatalari
 
 struct state state_des;
 struct state state;
+struct telem_pack telem_pack;
 
 const float st = 0.005;
 //PD Katsayilari
-float Kp = 5;
-float Kd =  2/st;
+
 int timer;
 int IC_val1, IC_val2, pwm_input;
 uint16_t pwm1, pwm2;
 uint16_t pwm_mid = 1200;
-char buf[100];
+char buf[sizeof(telem_pack)];
 unsigned int micros;
 Kalman_Filtresi EKF;
 PID pid;
 Controller controller;
 std::vector<int> controller_output;
-int w1,w2,w3,w4;
+uint8_t w1,w2,w3,w4;
 
 bool Is_First_Captured;
 volatile int IC_Val2, IC_Val1, Diff, Diff_debug;
@@ -129,6 +130,7 @@ static void MX_TIM4_Init(void);
 void MPU6050_Baslat(void);
 int16_t GyroOku (uint8_t addr);
 float GyroErr(uint8_t addr);
+void TelemPack(void);
 void PWMYaz();
 void MotorBaslat(void);
 void Check_Arm(void);
@@ -224,7 +226,9 @@ int main(void)
   {
 	  //micros = __HAL_TIM_GET_COUNTER(&htim3);
 	  //sprintf(buf,"%d\r\n",int(roll)); // @suppress("Float formatting support")
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), 1000);
+	  TelemPack();
+	  //sprintf(buf,"%s\n","test");
+	  HAL_UART_Transmit(&huart2, (uint8_t*)buf, sizeof(struct telem_pack), 1000);
 	  Check_Arm();
 	  Check_Disarm();
 	  if(armed) {
@@ -558,7 +562,7 @@ static void MX_USART2_UART_Init(void)
 
   /* USER CODE END USART2_Init 1 */
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
+  huart2.Init.BaudRate = 9600;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
@@ -678,6 +682,18 @@ void Check_Disarm() {
 	}
 }
 
+void TelemPack() {
+	  telem_pack.attitude.roll  = 10;
+	  telem_pack.attitude.pitch = 8;
+	  telem_pack.attitude.yaw   = 1;
+
+	  telem_pack.pwm.w1 = 1000;
+	  telem_pack.pwm.w2 = 1000;
+	  telem_pack.pwm.w3 = 1000;
+	  telem_pack.pwm.w4 = 1000;
+	  memcpy(buf,&telem_pack,sizeof(telem_pack));
+}
+
 int16_t GyroOku (uint8_t addr) {
 	uint8_t gyro_data[2];
 	HAL_I2C_Mem_Read(&hi2c1, (uint16_t)MPU6050 | I2C_READ, addr, 1, gyro_data, 2, 1);
@@ -782,6 +798,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  w2 = controller_output[1];
 		  w3 = controller_output[2];
 		  w4 = controller_output[3];
+
 		  HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_1);
 
 		}

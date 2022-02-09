@@ -4,28 +4,29 @@ cmath:463:3:constexpr float std::sqrt(float)	16	static
 stl_vector.h:125:14:std::_Vector_base<int, std::allocator<int> >::_Vector_impl::~_Vector_impl()	16	static
 stl_vector.h:285:7:std::_Vector_base<_Tp, _Alloc>::_Vector_base() [with _Tp = int; _Alloc = std::allocator<int>]	16	static
 stl_vector.h:484:7:std::vector<_Tp, _Alloc>::vector() [with _Tp = int; _Alloc = std::allocator<int>]	16	static
-main.cpp:142:5:int __io_putchar(int)	16	static
-main.cpp:149:6:void Delay(long int)	16	static
-main.cpp:164:5:int main()	8	static
-main.cpp:252:6:void SystemClock_Config()	72	static
-main.cpp:291:13:void MX_I2C1_Init()	8	static
-main.cpp:325:13:void MX_TIM1_Init()	80	static
-main.cpp:402:13:void MX_TIM2_Init()	32	static
-main.cpp:447:13:void MX_TIM3_Init()	48	static
-main.cpp:505:13:void MX_TIM4_Init()	32	static
-main.cpp:550:13:void MX_USART2_UART_Init()	8	static
-main.cpp:583:13:void MX_GPIO_Init()	40	static
-main.cpp:626:6:void MPU6050_Baslat()	32	static
-main.cpp:636:6:void Check_Arm()	8	static
-main.cpp:659:6:void Check_Disarm()	8	static
-main.cpp:681:9:int16_t GyroOku(uint8_t)	40	static
-main.cpp:688:7:float GyroErr(uint8_t)	24	static
-main.cpp:701:6:void PWMYaz()	8	static
-main.cpp:720:6:void MotorBaslat()	8	static
-main.cpp:729:5:int _write(int32_t, uint8_t*, int32_t)	32	static
-main.cpp:738:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	144	static
-main.cpp:790:6:void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef*)	16	static
-main.cpp:837:6:void Error_Handler()	4	static,ignoring_inline_asm
+main.cpp:144:5:int __io_putchar(int)	16	static
+main.cpp:151:6:void Delay(long int)	16	static
+main.cpp:166:5:int main()	8	static
+main.cpp:256:6:void SystemClock_Config()	72	static
+main.cpp:295:13:void MX_I2C1_Init()	8	static
+main.cpp:329:13:void MX_TIM1_Init()	80	static
+main.cpp:406:13:void MX_TIM2_Init()	32	static
+main.cpp:451:13:void MX_TIM3_Init()	48	static
+main.cpp:509:13:void MX_TIM4_Init()	32	static
+main.cpp:554:13:void MX_USART2_UART_Init()	8	static
+main.cpp:587:13:void MX_GPIO_Init()	40	static
+main.cpp:630:6:void MPU6050_Baslat()	32	static
+main.cpp:640:6:void Check_Arm()	8	static
+main.cpp:663:6:void Check_Disarm()	8	static
+main.cpp:685:6:void TelemPack()	12	static
+main.cpp:697:9:int16_t GyroOku(uint8_t)	40	static
+main.cpp:704:7:float GyroErr(uint8_t)	24	static
+main.cpp:717:6:void PWMYaz()	8	static
+main.cpp:736:6:void MotorBaslat()	8	static
+main.cpp:745:5:int _write(int32_t, uint8_t*, int32_t)	32	static
+main.cpp:754:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	144	static
+main.cpp:807:6:void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef*)	16	static
+main.cpp:854:6:void Error_Handler()	4	static,ignoring_inline_asm
 stl_vector.h:128:2:std::_Vector_base<_Tp, _Alloc>::_Vector_impl::_Vector_impl() [with _Tp = int; _Alloc = std::allocator<int>]	16	static
 allocator.h:153:7:std::allocator< <template-parameter-1-1> >::~allocator() [with _Tp = int]	16	static
 stl_vector.h:330:7:std::_Vector_base<_Tp, _Alloc>::~_Vector_base() [with _Tp = int; _Alloc = std::allocator<int>]	16	static
@@ -103,7 +104,7 @@ stl_iterator.h:859:7:__gnu_cxx::__normal_iterator<_Iterator, _Container> __gnu_c
 new_allocator.h:132:7:__gnu_cxx::new_allocator<_Tp>::size_type __gnu_cxx::new_allocator<_Tp>::max_size() const [with _Tp = int]	16	static
 stl_algobase.h:465:5:_OI std::copy(_II, _II, _OI) [with _II = __gnu_cxx::__normal_iterator<const int*, std::vector<int> >; _OI = int*]	32	static
 stl_algobase.h:438:5:_OI std::__copy_move_a2(_II, _II, _OI) [with bool _IsMove = false; _II = __gnu_cxx::__normal_iterator<const int*, std::vector<int> >; _OI = int*]	32	static
-main.cpp:846:1:void __static_initialization_and_destruction_0(int, int)	16	static
+main.cpp:863:1:void __static_initialization_and_destruction_0(int, int)	16	static
 stl_vector.h:675:7:std::vector<_Tp, _Alloc>::~vector() [with _Tp = int; _Alloc = std::allocator<int>]	24	static
-main.cpp:846:1:cpp)	8	static
-main.cpp:846:1:cpp)	8	static
+main.cpp:863:1:cpp)	8	static
+main.cpp:863:1:cpp)	8	static
