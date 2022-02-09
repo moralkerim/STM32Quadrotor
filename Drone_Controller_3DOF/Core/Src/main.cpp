@@ -240,7 +240,9 @@ int main(void)
 		  PWMYaz();
 	  }
 
-	  //HAL_Delay(250);
+
+
+	  HAL_Delay(100);
 
     /* USER CODE END WHILE */
 
