@@ -12,7 +12,7 @@ mySocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 mySocket.bind((ip, port))
 
 x_len = 200         # Number of points to display
-y_range = [-30, 30]  # Range of possible Y values to display
+y_range = [-10, 10]  # Range of possible Y values to display
 
 time = list(range(0, x_len))
 roll =  [0] * x_len

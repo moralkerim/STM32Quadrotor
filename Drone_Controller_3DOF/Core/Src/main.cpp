@@ -55,8 +55,7 @@
 #define ACC_Y_ADDR 0x3D
 #define ACC_Z_ADDR 0x3F
 
-#define ROLL_OFFSET   0.45
-#define PITCH_OFFSET -5.2
+
 
 #define I2C_READ 0x01
 
@@ -105,8 +104,9 @@ unsigned int micros;
 Kalman_Filtresi EKF;
 PID pid;
 Controller controller;
-std::vector<int> controller_output;
-uint8_t w1,w2,w3,w4;
+int controller_output[4];
+std::vector<double> controller_output_ang;
+unsigned short w1,w2,w3,w4;
 
 bool Is_First_Captured;
 volatile int IC_Val2, IC_Val1, Diff, Diff_debug;
@@ -115,6 +115,8 @@ int ch[CH_NUM+1];
 unsigned short int sync;
 long int delay_timer, current_time, arm_timer, test_timer, disarm_timer, sent_time;
 bool delay_start, arm_start, armed, motor_start, disarm_start;
+double w_ang;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -769,7 +771,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 		  float gyro[3];
 		  gyro[0] = gyroX;
-		  gyro[1] = gyroY;
+		  gyro[1] = -1*gyroY;
 		  gyro[2] = gyroZ;
 
 		  //İvmeölçer degerlerini oku
@@ -786,19 +788,25 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  pitch_acc=asin(accY/acctop)*57.324;					//İvme ölçerden hesaplanan pitch açısı
 
 		  EKF.Run(gyro,acc);
-		  state.angles[0]  	  = EKF.state.angles[0] + ROLL_OFFSET;
-		  state.angles[1] 	  = EKF.state.angles[1] + PITCH_OFFSET;
+		  state.angles[0]  	  = EKF.state.angles[0];
+		  state.angles[1] 	  = EKF.state.angles[1];
 		  state.angles[2]   = 	EKF.state.angles[2];
 
 		  state.rates[0] = gyroX;
-		  state.rates[1] = gyroY;
+		  state.rates[1] = -1*gyroY;
 		  state.rates[2] = gyroZ;
 		 // alpha_des = 0;
 		 // printf("roll: %d\r\n",int(roll));
 
 
-		  controller.Run(state, state_des, ch[2]);
-		  controller_output = controller.controller_output_pwm;
+		  controller_output_ang = controller.Run(state, state_des, ch[2]);
+		  controller_output[0] = controller.controller_output_pwm[0];
+		  controller_output[1] = controller.controller_output_pwm[1];
+		  controller_output[2] = controller.controller_output_pwm[2];
+		  controller_output[3] = controller.controller_output_pwm[3];
+
+		  w_ang = controller.pd_roll;
+
 		  w1 = controller_output[0];
 		  w2 = controller_output[1];
 		  w3 = controller_output[2];
