@@ -82,6 +82,7 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 float gyroX, gyroY, gyroZ, gyro_e_x, gyroX_a,gyroX_a_x, accX, accY, accZ;
+float GyroXh, GyroYh, GyroZh;
 float pitch_acc;
 float gyroa_x, gyroa_y, gyroa_z;
 float alpha, bias;
@@ -201,8 +202,8 @@ int main(void)
 
   MPU6050_Baslat();
   //Gyro kalibrasyon hatalarını hesapla.
-  gyro_e_x = GyroErr(GYRO_X_ADDR);
-
+  HAL_Delay(2000);
+  GyroXh=GyroErr(GYRO_X_ADDR)/65.5; GyroYh=GyroErr(GYRO_Y_ADDR)/65.5; GyroZh=GyroErr(GYRO_Z_ADDR)/65.5;
   //Kontrolcü Timer'ı
   HAL_TIM_Base_Start_IT(&htim2);
 
@@ -238,14 +239,7 @@ int main(void)
 
 	  Check_Arm();
 	  Check_Disarm();
-	  if(armed) {
-		  if(!motor_start) {
-			  MotorBaslat();
-			  motor_start = true;
-		  }
 
-		  PWMYaz();
-	  }
 
 
 
@@ -637,9 +631,9 @@ static void MX_GPIO_Init(void)
 void MPU6050_Baslat(void) {
 	uint8_t config = 0x00;
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, MPU6050_POW_REG, 1, &config, 1, 5); //Güç registerını aktif et
-	config = 0x18;
-	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, GYRO_CONF_REG, 1, &config, 1, 5); //Gyro 250 d/s'ye ayarlandi.
 	config = 0x08;
+	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, GYRO_CONF_REG, 1, &config, 1, 5); //Gyro 250 d/s'ye ayarlandi.
+	config = 0x10;
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, ACC_CONF_REG, 1, &config, 1, 5); //Acc +-8g'ye ayarlandi.
 }
 
@@ -698,6 +692,34 @@ void TelemPack() {
 	  telem_pack.pwm.w2 = controller_output[1];
 	  telem_pack.pwm.w3 = controller_output[2];
 	  telem_pack.pwm.w4 = controller_output[3];
+
+	  telem_pack.attitude_des.roll  = state_des.angles[0];
+	  telem_pack.attitude_des.pitch = state_des.angles[1];
+	  telem_pack.attitude_des.yaw   = state_des.angles[2];
+
+	  telem_pack.attitude_rate.roll =  state.rates[0];
+	  telem_pack.attitude_rate.pitch = state.rates[1];
+
+	  telem_pack.attitude_rate_des.roll =  state_des.rates[0];
+	  telem_pack.attitude_rate_des.pitch = state_des.rates[1];
+
+	  telem_pack.ekf.roll_acc  = EKF.roll_acc;
+	  telem_pack.ekf.pitch_acc = EKF.pitch_acc;
+	  telem_pack.ekf.yaw_acc   = EKF.yaw_acc;
+
+	  telem_pack.ekf.roll_gyro =  EKF.roll_gyro;
+	  telem_pack.ekf.pitch_gyro = EKF.pitch_gyro;
+
+	  telem_pack.pid_roll.P = controller.pid_roll.P;
+	  telem_pack.pid_roll.I = controller.pid_roll.I;
+	  telem_pack.pid_roll.D = controller.pid_roll.D;
+	  telem_pack.pid_roll.pd_roll_sat_buf = controller.pid_roll.pd_roll_sat_buf;
+
+	  telem_pack.pid_pitch.P = controller.pid_pitch.P;
+	  telem_pack.pid_pitch.I = controller.pid_pitch.I;
+	  telem_pack.pid_pitch.D = controller.pid_pitch.D;
+	  telem_pack.pid_pitch.pd_roll_sat_buf = controller.pid_pitch.pd_roll_sat_buf;
+
 	  memcpy(buf,&telem_pack,sizeof(telem_pack));
 }
 
@@ -708,17 +730,7 @@ int16_t GyroOku (uint8_t addr) {
 	return gyro;
 }
 
-float GyroErr(uint8_t addr) {
-	float GyroXe=0;
-	//2000 ornek al ve kayma degerini kaydet.
-	for (int i=0; i<2000; i++)
-	{
-		GyroXe += (float)GyroOku(addr);
 
-		} //Haberleşmeyi durdur.
-	GyroXe=GyroXe/2000; //Son okunan değeri 2000'e böl.
-	return GyroXe;
-}
 
 
 void PWMYaz() {
@@ -738,7 +750,16 @@ void PWMYaz() {
 }
 
 
+float GyroErr(uint8_t addr) {
+	float GyroXh=0;
+	for (int i=0; i<2000; i++)
+	{
+		GyroXh = (GyroOku(GYRO_X_ADDR));
 
+	} //Haberleşmeyi durdur.
+	GyroXh=GyroXh/2000; //Son okunan değeri 2000'e böl.
+	return GyroXh;
+}
 
 void MotorBaslat(void) {
 	  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,1000);
@@ -763,9 +784,9 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 	if(htim == &htim2) {
 
 
-		  gyroX = (GyroOku(GYRO_X_ADDR))/32.8;
-		  gyroY = (GyroOku(GYRO_Y_ADDR))/32.8;
-		  gyroZ = (GyroOku(GYRO_Z_ADDR))/32.8;
+		  gyroX = (GyroOku(GYRO_X_ADDR))/65.5 - GyroXh;
+		  gyroY = (GyroOku(GYRO_Y_ADDR))/65.5 - GyroYh;
+		  gyroZ = (GyroOku(GYRO_Z_ADDR))/65.5 - GyroZh;
 		  //gyroX_a_x = (GyroOku(GYRO_X_ADDR)-gyro_e_x)/65.5;
 		  //gyroX_a += gyroX_a_x * st;
 
@@ -795,6 +816,8 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  state.rates[0] = gyroX;
 		  state.rates[1] = -1*gyroY;
 		  state.rates[2] = gyroZ;
+
+
 		 // alpha_des = 0;
 		 // printf("roll: %d\r\n",int(roll));
 
@@ -805,12 +828,25 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  controller_output[2] = controller.controller_output_pwm[2];
 		  controller_output[3] = controller.controller_output_pwm[3];
 
+		  state_des.rates[0] = controller.roll_rate_des;
+		  state_des.rates[1] = controller.pitch_rate_des;
+
 		  w_ang = controller.pd_roll;
+
 
 		  w1 = controller_output[0];
 		  w2 = controller_output[1];
 		  w3 = controller_output[2];
 		  w4 = controller_output[3];
+
+		  if(armed) {
+			  if(!motor_start) {
+				  MotorBaslat();
+				  motor_start = true;
+			  }
+
+			  PWMYaz();
+		  }
 
 		  HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_1);
 

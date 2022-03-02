@@ -5,6 +5,11 @@ import struct
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib import style
+from datetime import datetime
+
+now = datetime.now()
+dt_string = now.strftime("%d.%m.%Y.%H.%M.%S")
+print("date and time =", dt_string)	
 
 port = 9000  # haberleşilen port adresi
 ip = ''
@@ -40,8 +45,8 @@ def animate(i,roll, pitch):
     (data, addr) = mySocket.recvfrom(1024)
 
 
-    data_org = struct.unpack('<fffHHHH', data)
-    with open('example.txt', "a") as file:
+    data_org = struct.unpack('<ffffffffffffHHHHfffffffffffff', data)
+    with open(dt_string + '.txt', "a") as file:
         file.write("\n")
         file.write(str(data_org))
     print(data_org)
