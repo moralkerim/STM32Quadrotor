@@ -647,6 +647,8 @@ void Check_Arm() {
 				}
 
 				if(HAL_GetTick() - arm_timer > 3000) {
+					controller.pid_roll.reset();
+					controller.pid_pitch.reset();
 					armed = true;
 					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
 
@@ -707,8 +709,8 @@ void TelemPack() {
 	  telem_pack.ekf.pitch_acc = EKF.pitch_acc;
 	  telem_pack.ekf.yaw_acc   = EKF.yaw_acc;
 
-	  telem_pack.ekf.roll_gyro =  EKF.roll_gyro;
-	  telem_pack.ekf.pitch_gyro = EKF.pitch_gyro;
+	  telem_pack.ekf.roll_gyro =  EKF.roll_comp;
+	  telem_pack.ekf.pitch_gyro = EKF.pitch_comp;
 
 	  telem_pack.pid_roll.P = controller.pid_roll.P;
 	  telem_pack.pid_roll.I = controller.pid_roll.I;
@@ -811,7 +813,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  EKF.Run(gyro,acc);
 		  state.angles[0]  	  = EKF.state.angles[0];
 		  state.angles[1] 	  = EKF.state.angles[1];
-		  state.angles[2]   = 	EKF.state.angles[2];
+		  state.angles[2]     = EKF.state.angles[2];
 
 		  state.rates[0] = gyroX;
 		  state.rates[1] = -1*gyroY;
