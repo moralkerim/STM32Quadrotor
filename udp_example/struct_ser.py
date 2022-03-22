@@ -6,6 +6,10 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib import style
 from datetime import datetime
+from threading import Timer
+
+
+    
 
 now = datetime.now()
 dt_string = now.strftime("%d.%m.%Y.%H.%M.%S")
@@ -37,33 +41,28 @@ ax.set_title("Roll")
 ax.set(ylabel = "Degrees")
 ay.set_title("Pitch")
 
-    
-print("server {} portunu dinliyor.".format(port))
-
-def animate(i,roll, pitch):
+def Log():
 
     (data, addr) = mySocket.recvfrom(1024)
 
 
     data_org = struct.unpack('<ffffffffffffHHHHfffffffffffff', data)
-    with open(dt_string + '.txt', "a") as file:
-        file.write("\n")
-        file.write(str(data_org))
-    print(data_org)
+    #file.write("\n")
+    #file.write(str(data_org))
+#    print(data_org)
     #print(data)
 
-    roll.append(data_org[0])  
-    pitch.append(data_org[1])
     
-    roll = roll[-x_len:]
-    pitch = pitch[-x_len:]
+print("server {} portunu dinliyor.".format(port))
+file = open(dt_string + '.txt', "a");
+
+
+t = Timer(0.01, Log)
+t.start()  # After 0.05 seconds, "Hello" will be printed
+
     
-    linex.set_ydata(roll)
-    liney.set_ydata(pitch)
-    return linex, liney,
-    
-ani = animation.FuncAnimation(fig, animate, fargs=(roll, pitch,), interval=50, blit=True)
-plt.show()
+#ani = animation.FuncAnimation(fig, animate, fargs=(roll, pitch,), interval=50, blit=True)
+#plt.show()
 
 
 

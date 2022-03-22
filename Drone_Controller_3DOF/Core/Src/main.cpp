@@ -88,6 +88,7 @@ float gyroa_x, gyroa_y, gyroa_z;
 float alpha, bias;
 float alpha_des;
 float e, e_eski; //PID hatalari
+float ie_roll_sat;
 
 struct state state_des;
 struct state state;
@@ -229,7 +230,7 @@ int main(void)
   {
 	  //micros = __HAL_TIM_GET_COUNTER(&htim3);
 	  //sprintf(buf,"%d\r\n",int(roll)); // @suppress("Float formatting support")
-	  if(HAL_GetTick()- sent_time > 100) {
+	  if(HAL_GetTick()- sent_time > 10) {
 		  TelemPack();
 		  HAL_UART_Transmit(&huart2, (uint8_t*)buf, sizeof(struct telem_pack), 1000);
 		  sent_time = HAL_GetTick();
@@ -832,6 +833,8 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 		  state_des.rates[0] = controller.roll_rate_des;
 		  state_des.rates[1] = controller.pitch_rate_des;
+
+		  ie_roll_sat = controller.pid_roll.ie_roll_sat;
 
 		  w_ang = controller.pd_roll;
 

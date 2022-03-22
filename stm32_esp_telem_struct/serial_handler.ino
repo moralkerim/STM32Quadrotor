@@ -12,8 +12,8 @@ void serialEvent() {
         Serial.println();
         char_index = 0; 
 
-        Serial.print("buf_size:"); Serial.println(sizeof(buf));
-        Serial.print("telem_size:"); Serial.println(sizeof(struct telem_pack));
+       // Serial.print("buf_size:"); Serial.println(sizeof(buf));
+      //  Serial.print("telem_size:"); Serial.println(sizeof(struct telem_pack));
 
         UDP.beginPacket(server_ip, UDP_PORT);
         UDP.write(buf,sizeof(struct telem_pack));
