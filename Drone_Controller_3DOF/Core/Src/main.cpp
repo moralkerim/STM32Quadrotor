@@ -46,6 +46,7 @@
 /* USER CODE BEGIN PM */
 #define MPU6050 (0x68<<1)
 #define MPU6050_POW_REG 0x6b
+#define MPU6050_DLPF_REG 0x1a
 #define GYRO_CONF_REG 0x1b
 #define ACC_CONF_REG 0x1c
 #define GYRO_X_ADDR 0x43
@@ -636,6 +637,10 @@ void MPU6050_Baslat(void) {
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, GYRO_CONF_REG, 1, &config, 1, 5); //Gyro 250 d/s'ye ayarlandi.
 	config = 0x10;
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, ACC_CONF_REG, 1, &config, 1, 5); //Acc +-8g'ye ayarlandi.
+	config = 0x04; //0x04
+	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, MPU6050_DLPF_REG, 1, &config, 1, 5); //Low Pass Filter 94 Hz'e ayarlandı
+
+
 }
 
 

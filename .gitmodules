@@ -1,0 +1,3 @@
+[submodule "Drone_Controller_3DOF/modular_robots"]
+	path = Drone_Controller_3DOF/modular_robots
+	url = git@github.com:moralkerim/modular_robots.git
