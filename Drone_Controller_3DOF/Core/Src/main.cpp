@@ -235,8 +235,9 @@ int main(void)
 	  if(HAL_GetTick()- sent_time > 1) {
 		  TelemPack();
 		  HAL_UART_Transmit(&huart2, (uint8_t*)buf, sizeof(struct telem_pack), 1000);
-		//  buf = '>';
-		//  HAL_UART_Transmit(&huart2, (uint8_t*)buf, sizeof(buf), 5);
+		  char end_char = '@';
+		  HAL_UART_Transmit(&huart2, (uint8_t*)&end_char, sizeof(end_char), 1000);
+		  HAL_UART_Transmit(&huart2, (uint8_t*)&end_char, sizeof(end_char), 1000);
 		  sent_time = HAL_GetTick();
 
 	  }
@@ -568,7 +569,7 @@ static void MX_USART2_UART_Init(void)
 
   /* USER CODE END USART2_Init 1 */
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = 250000;
+  huart2.Init.BaudRate = 115200;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;

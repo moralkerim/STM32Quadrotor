@@ -6,27 +6,27 @@ stl_vector.h:285:7:std::_Vector_base<_Tp, _Alloc>::_Vector_base() [with _Tp = do
 stl_vector.h:484:7:std::vector<_Tp, _Alloc>::vector() [with _Tp = double; _Alloc = std::allocator<double>]	16	static
 main.cpp:150:5:int __io_putchar(int)	16	static
 main.cpp:157:6:void Delay(long int)	16	static
-main.cpp:172:5:int main()	8	static
-main.cpp:260:6:void SystemClock_Config()	72	static
-main.cpp:299:13:void MX_I2C1_Init()	8	static
-main.cpp:333:13:void MX_TIM1_Init()	80	static
-main.cpp:410:13:void MX_TIM2_Init()	32	static
-main.cpp:455:13:void MX_TIM3_Init()	48	static
-main.cpp:513:13:void MX_TIM4_Init()	32	static
-main.cpp:558:13:void MX_USART2_UART_Init()	8	static
-main.cpp:591:13:void MX_GPIO_Init()	40	static
-main.cpp:634:6:void MPU6050_Baslat()	32	static
-main.cpp:648:6:void Check_Arm()	8	static
-main.cpp:673:6:void Check_Disarm()	8	static
-main.cpp:695:6:void TelemPack()	8	static
-main.cpp:735:9:int16_t GyroOku(uint8_t)	40	static
-main.cpp:745:6:void PWMYaz()	4	static
-main.cpp:762:7:float GyroErr(uint8_t)	24	static
-main.cpp:773:6:void MotorBaslat()	8	static
-main.cpp:782:5:int _write(int32_t, uint8_t*, int32_t)	32	static
-main.cpp:791:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	144	static
-main.cpp:867:6:void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef*)	16	static
-main.cpp:914:6:void Error_Handler()	4	static,ignoring_inline_asm
+main.cpp:172:5:int main()	16	static
+main.cpp:263:6:void SystemClock_Config()	72	static
+main.cpp:302:13:void MX_I2C1_Init()	8	static
+main.cpp:336:13:void MX_TIM1_Init()	80	static
+main.cpp:413:13:void MX_TIM2_Init()	32	static
+main.cpp:458:13:void MX_TIM3_Init()	48	static
+main.cpp:516:13:void MX_TIM4_Init()	32	static
+main.cpp:561:13:void MX_USART2_UART_Init()	8	static
+main.cpp:594:13:void MX_GPIO_Init()	40	static
+main.cpp:637:6:void MPU6050_Baslat()	32	static
+main.cpp:651:6:void Check_Arm()	8	static
+main.cpp:676:6:void Check_Disarm()	8	static
+main.cpp:698:6:void TelemPack()	8	static
+main.cpp:738:9:int16_t GyroOku(uint8_t)	40	static
+main.cpp:748:6:void PWMYaz()	4	static
+main.cpp:765:7:float GyroErr(uint8_t)	24	static
+main.cpp:776:6:void MotorBaslat()	8	static
+main.cpp:785:5:int _write(int32_t, uint8_t*, int32_t)	32	static
+main.cpp:794:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	144	static
+main.cpp:870:6:void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef*)	16	static
+main.cpp:917:6:void Error_Handler()	4	static,ignoring_inline_asm
 stl_vector.h:128:2:std::_Vector_base<_Tp, _Alloc>::_Vector_impl::_Vector_impl() [with _Tp = double; _Alloc = std::allocator<double>]	16	static
 allocator.h:153:7:std::allocator< <template-parameter-1-1> >::~allocator() [with _Tp = double]	16	static
 stl_vector.h:330:7:std::_Vector_base<_Tp, _Alloc>::~_Vector_base() [with _Tp = double; _Alloc = std::allocator<double>]	16	static
@@ -57,6 +57,6 @@ alloc_traits.h:545:17:void std::__do_alloc_on_move(_Alloc&, _Alloc&, std::true_t
 new_allocator.h:83:7:__gnu_cxx::new_allocator<_Tp>::new_allocator(const __gnu_cxx::new_allocator<_Tp>&) [with _Tp = double]	16	static
 stl_vector.h:133:2:std::_Vector_base<_Tp, _Alloc>::_Vector_impl::_Vector_impl(const _Tp_alloc_type&) [with _Tp = double; _Alloc = std::allocator<double>]	16	static
 move.h:99:5:constexpr typename std::remove_reference<_Tp>::type&& std::move(_Tp&&) [with _Tp = std::allocator<double>&]	16	static
-main.cpp:923:1:void __static_initialization_and_destruction_0(int, int)	16	static
-main.cpp:923:1:cpp)	8	static
-main.cpp:923:1:cpp)	8	static
+main.cpp:926:1:void __static_initialization_and_destruction_0(int, int)	16	static
+main.cpp:926:1:cpp)	8	static
+main.cpp:926:1:cpp)	8	static

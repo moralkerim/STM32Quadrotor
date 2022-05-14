@@ -14,6 +14,9 @@ IPAddress server_ip(192, 168, 1, 41);
 #define UDP_PORT 9000
 #define CS_PIN  D8
 #define SD_BUFFER_SIZE 1024
+
+#define FAST_LOG true
+
 //struct telem_pack from TelemData.h
 bool received,file_closed;
 WiFiUDP UDP;
@@ -25,13 +28,15 @@ char test_buf[sizeof(telem)];
 char buf[sizeof(struct telem_pack)];
 char log_buf[SD_BUFFER_SIZE];
 int char_index;
-bool led_state;
-unsigned int sd_counter;
+bool led_state, armed=true;
+unsigned int sd_counter, end_counter;
 unsigned long sd_time, udp_time, sd_send_time;
+
+size_t offset_log;
 
 File dataFile;
 void setup() {
-  Serial.begin(250000);
+  Serial.begin(115200);
   //stmSerial.begin(9600);
   // Begin WiFi
   pinMode(LED_BUILTIN, OUTPUT);
@@ -63,6 +68,22 @@ void setup() {
 }
 
 void loop() {
-  serialEvent();
+  if (millis() - sd_time > 50000) { 
+      armed = false;
+    }
+  
+  if(armed) {
+      serialEvent();
+  }
+
+  else if(!file_closed) {
+    dataFile.close();
+    file_closed = true;
+  }
+
+  else {
+    ToggleLED_1s();
+  }
+
   //writeSD();
 }
