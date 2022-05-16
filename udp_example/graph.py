@@ -45,7 +45,7 @@ def animate(i,roll, pitch):
     (data, addr) = mySocket.recvfrom(1024)
 
 
-    data_org = struct.unpack('<ffffffffffffHHHHfffffffffffff', data)
+    data_org = struct.unpack('<ffffffffffffHHHHfffffffffffffL', data)
     with open(dt_string + '.txt', "a") as file:
         file.write("\n")
         file.write(str(data_org))

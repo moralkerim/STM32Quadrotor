@@ -38,4 +38,5 @@ struct telem_pack {
   struct EKF ekf;
   struct PID_telem pid_roll;
   struct PID_telem pid_pitch;
+  unsigned long time_millis;
 }__attribute__ ((packed));

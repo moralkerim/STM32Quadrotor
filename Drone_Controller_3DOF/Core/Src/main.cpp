@@ -569,7 +569,7 @@ static void MX_USART2_UART_Init(void)
 
   /* USER CODE END USART2_Init 1 */
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
+  huart2.Init.BaudRate = 1000000;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
@@ -731,7 +731,7 @@ void TelemPack() {
 	  telem_pack.pid_pitch.I = controller.pid_pitch.I;
 	  telem_pack.pid_pitch.D = controller.pid_pitch.D;
 	  telem_pack.pid_pitch.pd_roll_sat_buf = controller.pid_pitch.pd_roll_sat_buf;
-
+	  telem_pack.time_millis = HAL_GetTick();
 	  memcpy(buf,&telem_pack,sizeof(telem_pack));
 }
 

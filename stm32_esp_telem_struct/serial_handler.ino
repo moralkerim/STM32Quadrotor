@@ -32,9 +32,9 @@ void ToggleLED_1s() {
   }
 }
 
-void clear_buffer (void)
+void clear_buffer (unsigned int chunkSize)
 {
-  for (int i = 0; i < SD_BUFFER_SIZE; i++) log_buf[i] = '\0';
+  memcpy(log_buf, log_buf+chunkSize, sizeof(log_buf)-chunkSize);
 }
 
 void serialEvent() {
@@ -69,10 +69,10 @@ void serialEvent() {
       memcpy(&telem, &buf , sizeof(buf));
       // Serial.print("buf_size:"); Serial.println(sizeof(buf));
       //  Serial.print("telem_size:"); Serial.println(sizeof(struct telem_pack));
+      //memcpy(log_buf + offset_log, buf, sizeof(buf));
 
       sendUDP();
-      writeSD();
-      memcpy(log_buf + offset_log, buf, sizeof(buf));
+      //writeSD();
     }
   }
 
@@ -91,9 +91,9 @@ void writeSD() {
           ToggleLED();
           //dataFile.print(telem.attitude.pitch);   dataFile.print("||");  dataFile.println(millis());
           unsigned int log_buf_size = offset_log - sizeof(struct telem_pack);
-          dataFile.write(log_buf, log_buf_size);
+          dataFile.write(log_buf, chunkSize);
           offset_log = 0;
-          clear_buffer();
+          clear_buffer(chunkSize);
 
         }
       }
@@ -104,13 +104,13 @@ void writeSD() {
 
 
 void sendUDP() {
-  if (millis() - udp_time > 20) {
-    udp_time = millis();
+//  if (millis() - udp_time > 20) {
+//    udp_time = millis();
 
     UDP.beginPacket(server_ip, UDP_PORT);
     UDP.write(buf, sizeof(struct telem_pack));
     UDP.endPacket();
 
-  }
+//  }
   //
 }
