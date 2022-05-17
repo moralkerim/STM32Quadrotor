@@ -62,5 +62,5 @@ def animate(i,roll, pitch):
     liney.set_ydata(pitch)
     return linex, liney,
     
-ani = animation.FuncAnimation(fig, animate, fargs=(roll, pitch,), interval=0.1, blit=True)
+ani = animation.FuncAnimation(fig, animate, fargs=(roll, pitch,), interval=0.05, blit=True)
 plt.show()

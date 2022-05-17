@@ -31,6 +31,9 @@
 #include "Kalman.hpp"
 #include "Controller.hpp"
 #include "TelemData.h"
+extern "C" {
+	#include "bmp180.h"
+}
 
 /* USER CODE END Includes */
 
@@ -120,6 +123,9 @@ unsigned short int sync;
 long int delay_timer, current_time, arm_timer, test_timer, disarm_timer, sent_time;
 bool delay_start, arm_start, armed, motor_start, disarm_start;
 double w_ang;
+float alt;
+
+bmp_t bmp;
 
 /* USER CODE END PV */
 
@@ -204,6 +210,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   MPU6050_Baslat();
+  bmp_init(&bmp);
   //Gyro kalibrasyon hatalarını hesapla.
   HAL_Delay(2000);
   GyroXh=GyroErr(GYRO_X_ADDR)/65.5; GyroYh=GyroErr(GYRO_Y_ADDR)/65.5; GyroZh=GyroErr(GYRO_Z_ADDR)/65.5;
@@ -829,7 +836,13 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  state.rates[1] = -1*gyroY;
 		  state.rates[2] = gyroZ;
 
+		  bmp.uncomp.temp = get_ut ();
+		  bmp.data.temp = get_temp (&bmp);
+		  bmp.uncomp.press = get_up (bmp.oss);
+		  bmp.data.press = get_pressure (bmp);
+		  bmp.data.altitude = get_altitude (&bmp);
 
+		  alt = bmp.data.altitude;
 		 // alpha_des = 0;
 		 // printf("roll: %d\r\n",int(roll));
 
