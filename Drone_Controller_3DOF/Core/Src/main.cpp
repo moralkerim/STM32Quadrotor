@@ -232,7 +232,7 @@ int main(void)
 
   //PPM Input Capture Kanalları
   //HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_2);
-  HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_2);
+  HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_3);
   //printf("Starting...\r\n");
   /* USER CODE END 2 */
 
@@ -846,7 +846,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  bmp.data.altitude = get_altitude (&bmp);
 
 		  alt = bmp.data.altitude;
-		  sonar_alt = getRange();
+		  sonar_alt = (float)getRange()/100.0;
 		 // alpha_des = 0;
 		 // printf("roll: %d\r\n",int(roll));
 
