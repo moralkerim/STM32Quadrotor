@@ -44,7 +44,7 @@
 // Device I2C addr register [R/O]: write EEh, read EFh:
 #define BMP_READ_ADDR	                    		(0xEF)
 #define BMP_WRITE_ADDR		                	(0xEE)
-#define BMP_I2C_TIMEOUT					(5U)
+#define BMP_I2C_TIMEOUT					(1U)
 //#define BMP_SET_I2CRW_REG(i2c_buff, reg)		(i2c_buff = reg)
 
 // BMP measurmenet regs

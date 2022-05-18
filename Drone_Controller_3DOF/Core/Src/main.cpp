@@ -103,6 +103,7 @@ struct state state;
 struct telem_pack telem_pack;
 
 const float st = 0.005;
+const float deg2rad = 0.0174;
 //PD Katsayilari
 
 int timer;
@@ -126,7 +127,7 @@ unsigned short int sync;
 long int delay_timer, current_time, arm_timer, test_timer, disarm_timer, sent_time;
 bool delay_start, arm_start, armed, motor_start, disarm_start;
 double w_ang;
-float baro_alt, sonar_alt;
+float baro_alt, sonar_alt, sonar_range;
 unsigned long sonar_send_time;
 bmp_t bmp;
 
@@ -436,7 +437,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 72-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 5000;
+  htim2.Init.Period = 2500;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -845,16 +846,18 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  state.rates[0] = gyroX;
 		  state.rates[1] = -1*gyroY;
 		  state.rates[2] = gyroZ;
-
+/*
 		  bmp.uncomp.temp = get_ut ();
 		  bmp.data.temp = get_temp (&bmp);
 		  bmp.uncomp.press = get_up (bmp.oss);
 		  bmp.data.press = get_pressure (bmp);
 		  bmp.data.altitude = get_altitude (&bmp);
 
-		  baro_alt = bmp.data.altitude;
+		  baro_alt = bmp.data.altitude; */
+
 		if( HAL_GetTick() - sonar_send_time > 50) {
-		  sonar_alt = (float)getRange()/100.0;
+		  sonar_range = (float)getRange()/100.0;
+		  sonar_alt = sonar_range * cos(abs(deg2rad*state.angles[0]))* cos(abs(deg2rad*state.angles[1]));
 		}
 		 // alpha_des = 0;
 		 // printf("roll: %d\r\n",int(roll));
