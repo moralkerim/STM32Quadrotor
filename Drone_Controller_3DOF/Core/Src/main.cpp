@@ -127,7 +127,7 @@ long int delay_timer, current_time, arm_timer, test_timer, disarm_timer, sent_ti
 bool delay_start, arm_start, armed, motor_start, disarm_start;
 double w_ang;
 float baro_alt, sonar_alt;
-
+unsigned long sonar_send_time;
 bmp_t bmp;
 
 /* USER CODE END PV */
@@ -845,7 +845,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  state.rates[0] = gyroX;
 		  state.rates[1] = -1*gyroY;
 		  state.rates[2] = gyroZ;
-/*
+
 		  bmp.uncomp.temp = get_ut ();
 		  bmp.data.temp = get_temp (&bmp);
 		  bmp.uncomp.press = get_up (bmp.oss);
@@ -853,7 +853,9 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  bmp.data.altitude = get_altitude (&bmp);
 
 		  baro_alt = bmp.data.altitude;
-		  sonar_alt = (float)getRange()/100.0; */
+		if( HAL_GetTick() - sonar_send_time > 50) {
+		  sonar_alt = (float)getRange()/100.0;
+		}
 		 // alpha_des = 0;
 		 // printf("roll: %d\r\n",int(roll));
 
