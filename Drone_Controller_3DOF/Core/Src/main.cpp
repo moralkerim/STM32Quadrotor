@@ -126,7 +126,7 @@ unsigned short int sync;
 long int delay_timer, current_time, arm_timer, test_timer, disarm_timer, sent_time;
 bool delay_start, arm_start, armed, motor_start, disarm_start;
 double w_ang;
-float alt, sonar_alt;
+float baro_alt, sonar_alt;
 
 bmp_t bmp;
 
@@ -284,7 +284,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL4;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -295,10 +295,10 @@ void SystemClock_Config(void)
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
     Error_Handler();
   }
@@ -358,7 +358,7 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 32-1;
+  htim1.Init.Prescaler = 72-1;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim1.Init.Period = 20000-1;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -434,7 +434,7 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 32-1;
+  htim2.Init.Prescaler = 72-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim2.Init.Period = 5000;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -480,7 +480,7 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 32-1;
+  htim3.Init.Prescaler = 72-1;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim3.Init.Period = 65535;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -539,7 +539,7 @@ static void MX_TIM4_Init(void)
   htim4.Instance = TIM4;
   htim4.Init.Prescaler = 32000-1;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 65535;
+  htim4.Init.Period = 1000;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
@@ -579,7 +579,7 @@ static void MX_USART2_UART_Init(void)
 
   /* USER CODE END USART2_Init 1 */
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = 1000000;
+  huart2.Init.BaudRate = 115200;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
@@ -727,10 +727,13 @@ void TelemPack() {
 
 	  telem_pack.ekf.roll_acc  = EKF.roll_acc;
 	  telem_pack.ekf.pitch_acc = EKF.pitch_acc;
-	  telem_pack.ekf.yaw_acc   = EKF.yaw_acc;
 
-	  telem_pack.ekf.roll_gyro =  EKF.roll_comp;
-	  telem_pack.ekf.pitch_gyro = EKF.pitch_comp;
+
+	  telem_pack.ekf.roll_comp =  EKF.roll_comp;
+	  telem_pack.ekf.pitch_comp = EKF.pitch_comp;
+
+	  telem_pack.ekf.roll_ekf =  EKF.roll_ekf;
+	  telem_pack.ekf.pitch_ekf = EKF.pitch_ekf;
 
 	  telem_pack.pid_roll.P = controller.pid_roll.P;
 	  telem_pack.pid_roll.I = controller.pid_roll.I;
@@ -741,6 +744,10 @@ void TelemPack() {
 	  telem_pack.pid_pitch.I = controller.pid_pitch.I;
 	  telem_pack.pid_pitch.D = controller.pid_pitch.D;
 	  telem_pack.pid_pitch.pd_roll_sat_buf = controller.pid_pitch.pd_roll_sat_buf;
+
+	  telem_pack.sonar_alt = sonar_alt;
+	  telem_pack.baro_alt = baro_alt;
+
 	  telem_pack.time_millis = HAL_GetTick();
 	  memcpy(buf,&telem_pack,sizeof(telem_pack));
 }
@@ -838,15 +845,15 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  state.rates[0] = gyroX;
 		  state.rates[1] = -1*gyroY;
 		  state.rates[2] = gyroZ;
-
+/*
 		  bmp.uncomp.temp = get_ut ();
 		  bmp.data.temp = get_temp (&bmp);
 		  bmp.uncomp.press = get_up (bmp.oss);
 		  bmp.data.press = get_pressure (bmp);
 		  bmp.data.altitude = get_altitude (&bmp);
 
-		  alt = bmp.data.altitude;
-		  sonar_alt = (float)getRange()/100.0;
+		  baro_alt = bmp.data.altitude;
+		  sonar_alt = (float)getRange()/100.0; */
 		 // alpha_des = 0;
 		 // printf("roll: %d\r\n",int(roll));
 

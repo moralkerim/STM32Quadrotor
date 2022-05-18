@@ -7,10 +7,16 @@ struct attitude {
 struct EKF {
     float roll_acc;
     float pitch_acc;
-    float yaw_acc;
 
     float roll_gyro;
     float pitch_gyro;
+
+    float roll_comp;
+    float pitch_comp;
+
+    float roll_ekf;
+    float pitch_ekf;
+
 }__attribute__ ((packed));
 
 struct PID_telem {
@@ -38,5 +44,7 @@ struct telem_pack {
   struct EKF ekf;
   struct PID_telem pid_roll;
   struct PID_telem pid_pitch;
+  float baro_alt;
+  float sonar_alt;
   unsigned long time_millis;
 }__attribute__ ((packed));
