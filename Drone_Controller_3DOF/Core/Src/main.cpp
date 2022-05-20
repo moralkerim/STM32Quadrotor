@@ -31,6 +31,7 @@
 #include "Kalman.hpp"
 #include "Controller.hpp"
 #include "TelemData.h"
+#include "MedianFilter.h"
 
 extern "C" {
 	#include "bmp180.h"
@@ -130,6 +131,7 @@ double w_ang;
 float baro_alt, sonar_alt, sonar_range;
 unsigned long sonar_send_time;
 bmp_t bmp;
+MedianFilter<float, 30> sonar_filt;
 
 /* USER CODE END PV */
 
@@ -858,8 +860,11 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  baro_alt = bmp.data.altitude; */
 
 		if( HAL_GetTick() - sonar_send_time > 50) {
+		  sonar_send_time = HAL_GetTick();
 		  sonar_range = (float)getRange()/100.0;
 		  sonar_alt = sonar_range * cos(abs(deg2rad*state.angles[0]))* cos(abs(deg2rad*state.angles[1]));
+		  sonar_filt.addSample(sonar_alt);
+		  sonar_alt = sonar_filt.getMedian();
 		}
 		 // alpha_des = 0;
 		 // printf("roll: %d\r\n",int(roll));
