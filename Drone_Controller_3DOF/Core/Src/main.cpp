@@ -147,6 +147,7 @@ void MPU6050_Baslat(void);
 int16_t GyroOku (uint8_t addr);
 float GyroErr(uint8_t addr);
 void TelemPack(void);
+void SendTelem(void);
 void PWMYaz();
 void MotorBaslat(void);
 void Check_Arm(void);
@@ -241,18 +242,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  //micros = __HAL_TIM_GET_COUNTER(&htim3);
-	  //sprintf(buf,"%d\r\n",int(roll)); // @suppress("Float formatting support")
-	  if(HAL_GetTick()- sent_time > 1) {
-		  TelemPack();
-		  HAL_UART_Transmit(&huart2, (uint8_t*)buf, sizeof(struct telem_pack), 1000);
-		  char end_char = '@';
-		  HAL_UART_Transmit(&huart2, (uint8_t*)&end_char, sizeof(end_char), 1000);
-		  HAL_UART_Transmit(&huart2, (uint8_t*)&end_char, sizeof(end_char), 1000);
-		  sent_time = HAL_GetTick();
 
-	  }
-	  //sprintf(buf,"%s\n","test");
+	  SendTelem();
 
 	  Check_Arm();
 	  Check_Disarm();
@@ -580,7 +571,7 @@ static void MX_USART2_UART_Init(void)
 
   /* USER CODE END USART2_Init 1 */
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
+  huart2.Init.BaudRate = 1000000;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
@@ -751,6 +742,17 @@ void TelemPack() {
 
 	  telem_pack.time_millis = HAL_GetTick();
 	  memcpy(buf,&telem_pack,sizeof(telem_pack));
+}
+
+void SendTelem() {
+	  TelemPack();
+	  HAL_UART_Transmit(&huart2, (uint8_t*)buf, sizeof(struct telem_pack), 10);
+	  char end_char = '@';
+	  HAL_UART_Transmit(&huart2, (uint8_t*)&end_char, sizeof(end_char), 10);
+	  HAL_UART_Transmit(&huart2, (uint8_t*)&end_char, sizeof(end_char), 10);
+	  sent_time = HAL_GetTick();
+
+
 }
 
 int16_t GyroOku (uint8_t addr) {

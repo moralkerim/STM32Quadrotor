@@ -106,7 +106,7 @@ void writeSD() {
 void sendUDP() {
 //  if (millis() - udp_time > 20) {
 //    udp_time = millis();
-
+    ToggleLED();
     UDP.beginPacket(server_ip, UDP_PORT);
     UDP.write(buf, sizeof(struct telem_pack));
     UDP.endPacket();
