@@ -128,11 +128,12 @@ unsigned short int sync;
 long int delay_timer, current_time, arm_timer, test_timer, disarm_timer, sent_time;
 bool delay_start, arm_start, armed, motor_start, disarm_start;
 double w_ang;
-float baro_alt, sonar_alt, sonar_range;
+float baro_alt, sonar_alt;
+unsigned int sonar_range;
 unsigned long sonar_send_time, controller_time, controller_time_pass;
 unsigned short int controller_counter, sonar_counter;
 bmp_t bmp;
-MedianFilter<float, 25> sonar_filt;
+MedianFilter<int, 25> sonar_filt;
 
 /* USER CODE END PV */
 
@@ -643,8 +644,8 @@ void MPU6050_Baslat(void) {
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, GYRO_CONF_REG, 1, &config, 1, 5); //Gyro 250 d/s'ye ayarlandi.
 	config = 0x10;
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, ACC_CONF_REG, 1, &config, 1, 5); //Acc +-8g'ye ayarlandi.
-	config = 0x04; //0x04
-	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, MPU6050_DLPF_REG, 1, &config, 1, 5); //Low Pass Filter 94 Hz'e ayarlandı
+	//config = 0x04; //0x04
+	//iğHAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, MPU6050_DLPF_REG, 1, &config, 1, 5); //Low Pass Filter 94 Hz'e ayarlandı
 
 
 }
@@ -821,10 +822,11 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		if(sonar_counter == 16) { //25 ms || 40 Hz
 		  sonar_counter = 0;
 		  sonar_send_time = HAL_GetTick();
-		  sonar_range = (float)getRange()/100.0;
-		  sonar_alt = sonar_range * cos(abs(deg2rad*state.angles[0]))* cos(abs(deg2rad*state.angles[1]));
+		  sonar_range = getRange();
 		  sonar_filt.addSample(sonar_alt);
 		  sonar_alt = sonar_filt.getMedian();
+		  sonar_alt = (float)sonar_range/100.0 * cos(abs(deg2rad*state.angles[0]))* cos(abs(deg2rad*state.angles[1]));
+
 		}
 
 		if(controller_counter == 2) { //2.5 ms || 400 Hz
