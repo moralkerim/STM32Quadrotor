@@ -14,7 +14,9 @@ print("date and time =", dt_string)
 port = 9000  # haberleşilen port adresi
 ip = ''
 mySocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+mySocket.setblocking(False).
 mySocket.bind((ip, port))
+
 
 x_len = 200         # Number of points to display
 y_range = [-10, 10]  # Range of possible Y values to display
@@ -44,13 +46,7 @@ def animate(i,roll, pitch):
 
     (data, addr) = mySocket.recvfrom(1024)
 
-
     data_org = struct.unpack('<ffffffffffffHHHHfffffffffffffL', data)
-    with open(dt_string + '.txt', "a") as file:
-        file.write("\n")
-        file.write(str(data_org))
-    print(data_org)
-    #print(data)
 
     roll.append(data_org[0])  
     pitch.append(data_org[1])

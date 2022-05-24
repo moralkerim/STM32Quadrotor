@@ -129,9 +129,10 @@ long int delay_timer, current_time, arm_timer, test_timer, disarm_timer, sent_ti
 bool delay_start, arm_start, armed, motor_start, disarm_start;
 double w_ang;
 float baro_alt, sonar_alt, sonar_range;
-unsigned long sonar_send_time;
+unsigned long sonar_send_time, controller_time, controller_time_pass;
+unsigned short int controller_counter, sonar_counter;
 bmp_t bmp;
-MedianFilter<float, 30> sonar_filt;
+MedianFilter<float, 25> sonar_filt;
 
 /* USER CODE END PV */
 
@@ -193,7 +194,8 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+
+	HAL_Init();
 
   /* USER CODE BEGIN Init */
   HAL_Delay(2000);
@@ -244,13 +246,9 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
 	  SendTelem();
-
 	  Check_Arm();
 	  Check_Disarm();
-
-
 
 
     /* USER CODE END WHILE */
@@ -430,7 +428,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 72-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 2500;
+  htim2.Init.Period = 1250;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -748,10 +746,10 @@ void TelemPack() {
 
 void SendTelem() {
 	  TelemPack();
-	  HAL_UART_Transmit(&huart2, (uint8_t*)buf, sizeof(struct telem_pack), 10);
+	  HAL_UART_Transmit(&huart2, (uint8_t*)buf, sizeof(struct telem_pack), 100);
 	  char end_char = '@';
-	  HAL_UART_Transmit(&huart2, (uint8_t*)&end_char, sizeof(end_char), 10);
-	  HAL_UART_Transmit(&huart2, (uint8_t*)&end_char, sizeof(end_char), 10);
+	  HAL_UART_Transmit(&huart2, (uint8_t*)&end_char, sizeof(end_char), 100);
+	  HAL_UART_Transmit(&huart2, (uint8_t*)&end_char, sizeof(end_char), 100);
 	  sent_time = HAL_GetTick();
 
 
@@ -816,8 +814,24 @@ int _write(int32_t file, uint8_t *ptr, int32_t len) {
 void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 	if(htim == &htim2) {
+		//1.25 ms || 800 Hz
+		sonar_counter++;
+		controller_counter++;
 
+		if(sonar_counter == 16) { //25 ms || 40 Hz
+		  sonar_counter = 0;
+		  sonar_send_time = HAL_GetTick();
+		  sonar_range = (float)getRange()/100.0;
+		  sonar_alt = sonar_range * cos(abs(deg2rad*state.angles[0]))* cos(abs(deg2rad*state.angles[1]));
+		  sonar_filt.addSample(sonar_alt);
+		  sonar_alt = sonar_filt.getMedian();
+		}
 
+		if(controller_counter == 2) { //2.5 ms || 400 Hz
+
+		  controller_counter = 0;
+		  controller_time_pass = HAL_GetTick() - controller_time;
+		  controller_time = HAL_GetTick();
 		  gyroX = (GyroOku(GYRO_X_ADDR))/65.5 - GyroXh;
 		  gyroY = (GyroOku(GYRO_Y_ADDR))/65.5 - GyroYh;
 		  gyroZ = (GyroOku(GYRO_Z_ADDR))/65.5 - GyroZh;
@@ -859,13 +873,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 		  baro_alt = bmp.data.altitude; */
 
-		if( HAL_GetTick() - sonar_send_time > 50) {
-		  sonar_send_time = HAL_GetTick();
-		  sonar_range = (float)getRange()/100.0;
-		  sonar_alt = sonar_range * cos(abs(deg2rad*state.angles[0]))* cos(abs(deg2rad*state.angles[1]));
-		  sonar_filt.addSample(sonar_alt);
-		  sonar_alt = sonar_filt.getMedian();
-		}
+
 		 // alpha_des = 0;
 		 // printf("roll: %d\r\n",int(roll));
 
@@ -899,7 +907,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  }
 
 		  HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_1);
-
+		}
 		}
 	}
 
@@ -908,6 +916,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
 
  if(htim == &htim3) {
+
 
 	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3)  // if the interrupt source is channel1
 	{
