@@ -133,7 +133,7 @@ unsigned int sonar_range;
 unsigned long sonar_send_time, controller_time, controller_time_pass;
 unsigned short int controller_counter, sonar_counter;
 bmp_t bmp;
-MedianFilter<int, 25> sonar_filt;
+MedianFilter<int, 35> sonar_filt;
 
 /* USER CODE END PV */
 
