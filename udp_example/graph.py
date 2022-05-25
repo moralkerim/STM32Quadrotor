@@ -7,7 +7,7 @@ import matplotlib.animation as animation
 from matplotlib import style
 from datetime import datetime
 from enum import Enum
-
+import select
 telem_value = 1
 
 class Telem(Enum):
@@ -68,16 +68,12 @@ mySocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 mySocket.bind((ip, port))
 
 
-x_len = 200         # Number of points to display
+x_len = 200      # Number of points to display
 y_range = [int(sys.argv[2]), int(sys.argv[3])]  # Range of possible Y values to display
 
 time = list(range(0, x_len))
 data_enum =  [0] * x_len
-pitch = [0] * x_len
 i = 0;
-input =  Telem.sonar_alt.value     
-data_array = [[0] * 35 for _ in range(x_len)]
-
 style.use('fivethirtyeight')
 
 fig = plt.figure()
@@ -95,21 +91,30 @@ ax.set(ylabel = "Value")
     
 print("server {} portunu dinliyor.".format(port))
 
+def empty_socket(sock):
+    """remove the data present on the socket"""
+    input = [sock]
+    while 1:
+        inputready, o, e = select.select(input,[],[], 0.0)
+        if len(inputready)==0: break
+        for s in inputready: s.recv(1024)
+
+
 def animate(i,data_enum):
+        (data, addr) = mySocket.recvfrom(1024)
 
-    (data, addr) = mySocket.recvfrom(1024)
+        empty_socket(mySocket)
+        data_org = struct.unpack('<ffffffffffffHHHHffffffffffffffffffL', data)
 
-    data_org = struct.unpack('<ffffffffffffHHHHffffffffffffffffffL', data)
-
-    data_enum.append(data_org[telem_value-1])  
-    #pitch.append(data_org[1])
-    
-    data_enum = data_enum[-x_len:]
-    #pitch = pitch[-x_len:]
-    
-    linex.set_ydata(data_enum)
-    #liney.set_ydata(pitch)
-    return linex,
+        data_enum.append(data_org[telem_value-1])  
+        #pitch.append(data_org[1])
+        
+        data_enum = data_enum[-x_len:]
+        #pitch = pitch[-x_len:]
+        
+        linex.set_ydata(data_enum)
+        #liney.set_ydata(pitch)
+        return linex,
     
 ani = animation.FuncAnimation(fig, animate, fargs=(data_enum,), interval=0.05, blit=True)
 plt.show()

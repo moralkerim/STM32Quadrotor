@@ -819,7 +819,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		sonar_counter++;
 		controller_counter++;
 
-		if(sonar_counter == 16) { //25 ms || 40 Hz
+		if(sonar_counter == 16) { // || 50 Hz
 		  sonar_counter = 0;
 		  sonar_send_time = HAL_GetTick();
 		  sonar_range = getRange();

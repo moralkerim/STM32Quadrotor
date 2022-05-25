@@ -66,7 +66,7 @@ void serialEvent() {
       char_index = 0;
 
       offset_log += sizeof(struct telem_pack);
-      memcpy(&telem, &buf , sizeof(buf));
+      memcpy(&telem, buf , sizeof(buf));
       // Serial.print("buf_size:"); Serial.println(sizeof(buf));
       //  Serial.print("telem_size:"); Serial.println(sizeof(struct telem_pack));
       //memcpy(log_buf + offset_log, buf, sizeof(buf));
