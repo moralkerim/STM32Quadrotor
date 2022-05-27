@@ -128,12 +128,12 @@ unsigned short int sync;
 long int delay_timer, current_time, arm_timer, test_timer, disarm_timer, sent_time;
 bool delay_start, arm_start, armed, motor_start, disarm_start;
 double w_ang;
-float baro_alt, sonar_alt;
+float baro_alt, sonar_alt, sonar_alt_;
 unsigned int sonar_range;
 unsigned long sonar_send_time, controller_time, controller_time_pass;
 unsigned short int controller_counter, sonar_counter;
 bmp_t bmp;
-MedianFilter<int, 35> sonar_filt;
+MedianFilter<int, 100> sonar_filt;
 
 /* USER CODE END PV */
 
@@ -645,7 +645,7 @@ void MPU6050_Baslat(void) {
 	config = 0x10;
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, ACC_CONF_REG, 1, &config, 1, 5); //Acc +-8g'ye ayarlandi.
 	//config = 0x04; //0x04
-	//iğHAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, MPU6050_DLPF_REG, 1, &config, 1, 5); //Low Pass Filter 94 Hz'e ayarlandı
+	//HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, MPU6050_DLPF_REG, 1, &config, 1, 5); //Low Pass Filter 94 Hz'e ayarlandı
 
 
 }
@@ -712,8 +712,9 @@ void TelemPack() {
 	  telem_pack.attitude_des.pitch = state_des.angles[1];
 	  telem_pack.attitude_des.yaw   = state_des.angles[2];
 
-	  telem_pack.attitude_rate.roll =  state.rates[0];
+	  telem_pack.attitude_rate.roll  = state.rates[0];
 	  telem_pack.attitude_rate.pitch = state.rates[1];
+	  telem_pack.attitude_rate.yaw 	 = state.rates[2];
 
 	  telem_pack.attitude_rate_des.roll =  state_des.rates[0];
 	  telem_pack.attitude_rate_des.pitch = state_des.rates[1];
@@ -819,14 +820,17 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		sonar_counter++;
 		controller_counter++;
 
-		if(sonar_counter == 16) { // || 50 Hz
+		if(sonar_counter == 40) { // || 20 Hz
 		  sonar_counter = 0;
-		  sonar_send_time = HAL_GetTick();
+		  //sonar_send_time = HAL_GetTick();
 		  sonar_range = getRange();
-		  sonar_filt.addSample(sonar_alt);
-		  sonar_alt = sonar_filt.getMedian();
+		  //sonar_filt.addSample(sonar_alt);
+		  //sonar_alt = sonar_filt.getMedian();
+		  sonar_alt_ = sonar_alt;
 		  sonar_alt = (float)sonar_range/100.0 * cos(abs(deg2rad*state.angles[0]))* cos(abs(deg2rad*state.angles[1]));
-
+		  if(sonar_alt > 5 || sonar_alt < 0.4) {
+			  sonar_alt = sonar_alt_;
+		  }
 		}
 
 		if(controller_counter == 2) { //2.5 ms || 400 Hz
@@ -863,9 +867,9 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  state.angles[1] 	  = EKF.state.angles[1];
 		  state.angles[2]     = EKF.state.angles[2];
 
-		  state.rates[0] = gyroX;
-		  state.rates[1] = -1*gyroY;
-		  state.rates[2] = gyroZ;
+		  state.rates[0] = EKF.state.rates[0];
+		  state.rates[1] = EKF.state.rates[1];
+		  state.rates[2] = EKF.state.rates[2];
 /*
 		  bmp.uncomp.temp = get_ut ();
 		  bmp.data.temp = get_temp (&bmp);

@@ -32,3 +32,7 @@
 *.exe
 *.out
 *.app
+
+*.txt
+*.elf
+*.bin
