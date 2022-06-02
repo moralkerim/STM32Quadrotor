@@ -37,7 +37,8 @@ classdef Telem < uint32
       pid_pitch(32)
       baro_alt(33)
       sonar_alt(34)
-      time_millis(35)
+      sonar_vel(35)
+      time_millis(36)
       
    end
 end

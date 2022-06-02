@@ -46,5 +46,6 @@ struct telem_pack {
   struct PID_telem pid_pitch;
   float baro_alt;
   float sonar_alt;
+  float sonar_vel;
   unsigned long time_millis;
 }__attribute__ ((packed));

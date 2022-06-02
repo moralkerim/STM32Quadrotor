@@ -37,9 +37,10 @@ int getRange (void)
 
 }
 
-void set_ucounter(void) {
+void set_ucounter(unsigned int CLOCK_RATE) {
+
 	u_counter++;
-	if(u_counter > 40) {
+	if(u_counter > CLOCK_RATE) {
 		u_counter = 0;
 	}
 }

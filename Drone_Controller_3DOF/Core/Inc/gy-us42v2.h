@@ -7,4 +7,4 @@
 void request_range(void);
 int getRange (void);
 int get_ucounter(void);
-void set_ucounter(void);
+void set_ucounter(unsigned int CLOCK_RATE);

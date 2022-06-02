@@ -64,6 +64,11 @@ extern "C" {
 #define ACC_Y_ADDR 0x3D
 #define ACC_Z_ADDR 0x3F
 
+#define FULL_CLOCK 800
+#define CNTRL_CLOCK 400
+#define SONAR_CLOCK 16
+
+#define SONAR_CLOCK_RATE 50
 
 
 #define I2C_READ 0x01
@@ -128,7 +133,7 @@ unsigned short int sync;
 long int delay_timer, current_time, arm_timer, test_timer, disarm_timer, sent_time;
 bool delay_start, arm_start, armed, motor_start, disarm_start;
 double w_ang;
-float baro_alt, sonar_alt, sonar_alt_;
+float baro_alt, sonar_alt, sonar_alt_, sonar_vel;
 unsigned int sonar_range;
 unsigned long sonar_send_time, controller_time, controller_time_pass;
 unsigned short int controller_counter, sonar_counter;
@@ -739,6 +744,7 @@ void TelemPack() {
 	  telem_pack.pid_pitch.pd_roll_sat_buf = controller.pid_pitch.pd_roll_sat_buf;
 
 	  telem_pack.sonar_alt = sonar_alt;
+	  telem_pack.sonar_vel = sonar_vel;
 	  telem_pack.baro_alt = baro_alt;
 
 	  telem_pack.time_millis = HAL_GetTick();
@@ -816,7 +822,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 	if(htim == &htim2) {
 		//1.25 ms || 800 Hz
-		set_ucounter();
+		set_ucounter(SONAR_CLOCK_RATE);
 
 		controller_counter++;
 
@@ -828,14 +834,16 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 			//sonar_range = getRange();
 		}
 
-		else if (get_ucounter() == 40) {
+		else if (get_ucounter() == SONAR_CLOCK_RATE) {
 		  sonar_range = getRange();
-		  //sonar_filt.addSample(sonar_alt);
-		  //sonar_alt = sonar_filt.getMedian();
 		  sonar_alt_ = sonar_alt;
 		  sonar_alt = (float)sonar_range/100.0 * cos(abs(deg2rad*state.angles[0]))* cos(abs(deg2rad*state.angles[1]));
-		  if(sonar_alt > 5) {
+		  float sonar_st = (float)(1.0/SONAR_CLOCK);
+		  sonar_vel = (sonar_alt - sonar_alt_) / sonar_st;
+
+		  if(abs(sonar_vel) > 10) {
 			  sonar_alt = sonar_alt_;
+			  sonar_vel = (sonar_alt - sonar_alt_) / sonar_st;
 		  }
 
 		}
