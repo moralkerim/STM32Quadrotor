@@ -195,8 +195,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-
-	HAL_Init();
+  HAL_Init();
 
   /* USER CODE BEGIN Init */
   HAL_Delay(2000);
@@ -817,21 +816,31 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 	if(htim == &htim2) {
 		//1.25 ms || 800 Hz
-		sonar_counter++;
+		set_ucounter();
+
 		controller_counter++;
 
-		if(sonar_counter == 40) { // || 20 Hz
-		  sonar_counter = 0;
+		//if(sonar_counter == 40) { // || 20 Hz
+		 // sonar_counter = 0;
 		  //sonar_send_time = HAL_GetTick();
+		if(get_ucounter() == 1) {
+			request_range();
+			//sonar_range = getRange();
+		}
+
+		else if (get_ucounter() == 40) {
 		  sonar_range = getRange();
 		  //sonar_filt.addSample(sonar_alt);
 		  //sonar_alt = sonar_filt.getMedian();
 		  sonar_alt_ = sonar_alt;
 		  sonar_alt = (float)sonar_range/100.0 * cos(abs(deg2rad*state.angles[0]))* cos(abs(deg2rad*state.angles[1]));
-		  if(sonar_alt > 5 || sonar_alt < 0.4) {
+		  if(sonar_alt > 5) {
 			  sonar_alt = sonar_alt_;
 		  }
+
 		}
+
+		//}
 
 		if(controller_counter == 2) { //2.5 ms || 400 Hz
 

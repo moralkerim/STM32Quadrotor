@@ -1,1 +1,4 @@
-gy-us42v2.c:5:5:getRange	24	static
+gy-us42v2.c:10:6:request_range	24	static
+gy-us42v2.c:24:5:getRange	24	static
+gy-us42v2.c:40:6:set_ucounter	4	static
+gy-us42v2.c:47:5:get_ucounter	4	static
