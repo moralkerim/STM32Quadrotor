@@ -26,3 +26,4 @@
 "modular_robots/modular_ws/src/controller/include/src/Kalman.o"
 "modular_robots/modular_ws/src/controller/include/src/LowPassFilter.o"
 "modular_robots/modular_ws/src/controller/include/src/PID.o"
+"modular_robots/modular_ws/src/controller/include/src/lpf.o"
