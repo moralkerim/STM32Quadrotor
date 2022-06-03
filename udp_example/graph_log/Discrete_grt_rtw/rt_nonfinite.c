@@ -7,9 +7,9 @@
  *
  * Code generation for model "Discrete".
  *
- * Model version              : 1.0
+ * Model version              : 1.212
  * Simulink Coder version : 9.4 (R2020b) 29-Jul-2020
- * C source code generated on : Tue Mar 15 15:11:25 2022
+ * C source code generated on : Fri Jun  3 15:28:21 2022
  *
  * Target selection: grt.tlc
  * Note: GRT includes extra infrastructure and instrumentation for prototyping

@@ -144,7 +144,7 @@ Output entry point of generated code
 Timing
 </td>
 <td width="75%" align="left" valign="top">
-Must be called periodically, every 0.2 seconds
+Must be called periodically, every 0.0025 seconds
 </td>
 
 </tr>
@@ -276,7 +276,7 @@ Dimension
 </tr>
 <tr class="even">
 <td width="42%" align="left" valign="top">
-&lt;S1&gt;/u
+&lt;S14&gt;/u
 </td>
 <td width="26%" align="left" valign="top">
 Discrete_U.u
@@ -327,7 +327,7 @@ Dimension
 </tr>
 <tr class="even">
 <td width="42%" align="left" valign="top">
-&lt;S1&gt;/y
+&lt;S14&gt;/y
 </td>
 <td width="26%" align="left" valign="top">
 Discrete_Y.y
@@ -378,10 +378,10 @@ Dimension
 </tr>
 <tr class="even">
 <td width="42%" align="left" valign="top">
-&lt;Root&gt;/Discrete PID Controller
+&lt;S1&gt;/Discrete PID Controller
 </td>
 <td width="26%" align="left" valign="top">
-Discrete_P.DiscretePIDController_I
+Discrete_P.DiscretePIDController_D
 </td>
 <td width="21%" align="left" valign="top">
 real_T
@@ -393,7 +393,7 @@ real_T
 </tr>
 <tr class="odd">
 <td width="42%" align="left" valign="top">
-&lt;Root&gt;/Discrete PID Controller
+&lt;S1&gt;/Discrete PID Controller
 </td>
 <td width="26%" align="left" valign="top">
 Discrete_P.DiscretePIDController_InitialCo
@@ -408,10 +408,10 @@ real_T
 </tr>
 <tr class="even">
 <td width="42%" align="left" valign="top">
-&lt;Root&gt;/Discrete PID Controller
+&lt;S1&gt;/Discrete PID Controller
 </td>
 <td width="26%" align="left" valign="top">
-Discrete_P.DiscretePIDController_LowerSatu
+Discrete_P.DiscretePIDController_N
 </td>
 <td width="21%" align="left" valign="top">
 real_T
@@ -423,10 +423,10 @@ real_T
 </tr>
 <tr class="odd">
 <td width="42%" align="left" valign="top">
-&lt;Root&gt;/Discrete PID Controller
+&lt;S1&gt;/Discrete PID Controller
 </td>
 <td width="26%" align="left" valign="top">
-Discrete_P.DiscretePIDController_UpperSatu
+Discrete_P.DiscretePIDController_P
 </td>
 <td width="21%" align="left" valign="top">
 real_T
@@ -438,40 +438,10 @@ real_T
 </tr>
 <tr class="even">
 <td width="42%" align="left" valign="top">
-&lt;S26&gt;/Constant1
+&lt;S42&gt;/Filter
 </td>
 <td width="26%" align="left" valign="top">
-Discrete_P.Constant1_Value
-</td>
-<td width="21%" align="left" valign="top">
-real_T
-</td>
-<td width="10%" align="right" valign="top">
-1
-</td>
-
-</tr>
-<tr class="odd">
-<td width="42%" align="left" valign="top">
-&lt;S35&gt;/Integrator
-</td>
-<td width="26%" align="left" valign="top">
-Discrete_P.Integrator_gainval
-</td>
-<td width="21%" align="left" valign="top">
-real_T
-</td>
-<td width="10%" align="right" valign="top">
-1
-</td>
-
-</tr>
-<tr class="even">
-<td width="42%" align="left" valign="top">
-&lt;S26&gt;/ZeroGain
-</td>
-<td width="26%" align="left" valign="top">
-Discrete_P.ZeroGain_Gain
+Discrete_P.Filter_gainval
 </td>
 <td width="21%" align="left" valign="top">
 real_T

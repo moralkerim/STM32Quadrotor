@@ -666,6 +666,7 @@ void Check_Arm() {
 				if(HAL_GetTick() - arm_timer > 3000) {
 					controller.pid_roll.reset();
 					controller.pid_pitch.reset();
+					controller.pid_yaw.reset();
 					armed = true;
 					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
 
@@ -773,7 +774,7 @@ int16_t GyroOku (uint8_t addr) {
 
 
 void PWMYaz() {
-	  if(ch[EMERGENCY_CH-1] < 1500) {
+	  if(ch[EMERGENCY_CH-1] < 1500 && ch[3-1] > 1050) {
 		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,controller_output[0]);
 		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,controller_output[1]);
 		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,controller_output[2]);
@@ -785,6 +786,7 @@ void PWMYaz() {
 		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,1000);
 		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,1000);
 		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,1000);
+
 	  }
 }
 
@@ -793,7 +795,7 @@ float GyroErr(uint8_t addr) {
 	float GyroXh=0;
 	for (int i=0; i<2000; i++)
 	{
-		GyroXh = (GyroOku(GYRO_X_ADDR));
+		GyroXh += (GyroOku(addr));
 
 	} //Haberleşmeyi durdur.
 	GyroXh=GyroXh/2000; //Son okunan değeri 2000'e böl.

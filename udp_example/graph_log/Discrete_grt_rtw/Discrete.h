@@ -7,9 +7,9 @@
  *
  * Code generation for model "Discrete".
  *
- * Model version              : 1.0
+ * Model version              : 1.212
  * Simulink Coder version : 9.4 (R2020b) 29-Jul-2020
- * C source code generated on : Tue Mar 15 15:11:25 2022
+ * C source code generated on : Fri Jun  3 15:28:21 2022
  *
  * Target selection: grt.tlc
  * Note: GRT includes extra infrastructure and instrumentation for prototyping
@@ -20,7 +20,6 @@
 
 #ifndef RTW_HEADER_Discrete_h_
 #define RTW_HEADER_Discrete_h_
-#include <math.h>
 #include <float.h>
 #include <string.h>
 #include <stddef.h>
@@ -36,9 +35,7 @@
 
 /* Shared type includes */
 #include "multiword_types.h"
-#include "rtGetNaN.h"
 #include "rt_nonfinite.h"
-#include "rtGetInf.h"
 
 /* Macros for accessing real-time model data structure */
 #ifndef rtmGetFinalTime
@@ -83,7 +80,7 @@
 
 /* Block states (default storage) for system '<Root>' */
 typedef struct {
-  real_T Integrator_DSTATE;            /* '<S35>/Integrator' */
+  real_T Filter_DSTATE;                /* '<S28>/Filter' */
 } DW_Discrete_T;
 
 /* External inputs (root inport signals with default storage) */
@@ -98,33 +95,21 @@ typedef struct {
 
 /* Parameters (default storage) */
 struct P_Discrete_T_ {
-  real_T DiscretePIDController_I;     /* Mask Parameter: DiscretePIDController_I
-                                       * Referenced by: '<S32>/Integral Gain'
+  real_T DiscretePIDController_D;     /* Mask Parameter: DiscretePIDController_D
+                                       * Referenced by: '<S27>/Derivative Gain'
                                        */
   real_T DiscretePIDController_InitialCo;
                               /* Mask Parameter: DiscretePIDController_InitialCo
-                               * Referenced by: '<S35>/Integrator'
+                               * Referenced by: '<S28>/Filter'
                                */
-  real_T DiscretePIDController_LowerSatu;
-                              /* Mask Parameter: DiscretePIDController_LowerSatu
-                               * Referenced by:
-                               *   '<S42>/Saturation'
-                               *   '<S28>/DeadZone'
-                               */
-  real_T DiscretePIDController_UpperSatu;
-                              /* Mask Parameter: DiscretePIDController_UpperSatu
-                               * Referenced by:
-                               *   '<S42>/Saturation'
-                               *   '<S28>/DeadZone'
-                               */
-  real_T Constant1_Value;              /* Expression: 0
-                                        * Referenced by: '<S26>/Constant1'
-                                        */
-  real_T Integrator_gainval;           /* Computed Parameter: Integrator_gainval
-                                        * Referenced by: '<S35>/Integrator'
-                                        */
-  real_T ZeroGain_Gain;                /* Expression: 0
-                                        * Referenced by: '<S26>/ZeroGain'
+  real_T DiscretePIDController_N;     /* Mask Parameter: DiscretePIDController_N
+                                       * Referenced by: '<S36>/Filter Coefficient'
+                                       */
+  real_T DiscretePIDController_P;     /* Mask Parameter: DiscretePIDController_P
+                                       * Referenced by: '<S38>/Proportional Gain'
+                                       */
+  real_T Filter_gainval;               /* Computed Parameter: Filter_gainval
+                                        * Referenced by: '<S28>/Filter'
                                         */
 };
 
@@ -180,62 +165,60 @@ extern RT_MODEL_Discrete_T *const Discrete_M;
  * MATLAB hilite_system command to trace the generated code back
  * to the parent model.  For example,
  *
- * hilite_system('untitled/Discrete PID Controller')    - opens subsystem untitled/Discrete PID Controller
- * hilite_system('untitled/Discrete PID Controller/Kp') - opens and selects block Kp
+ * hilite_system('quadrotor_controller/Altitude Controller/Discrete PID Controller')    - opens subsystem quadrotor_controller/Altitude Controller/Discrete PID Controller
+ * hilite_system('quadrotor_controller/Altitude Controller/Discrete PID Controller/Kp') - opens and selects block Kp
  *
  * Here is the system hierarchy for this model
  *
- * '<Root>' : 'untitled'
- * '<S1>'   : 'untitled/Discrete PID Controller'
- * '<S2>'   : 'untitled/Discrete PID Controller/Anti-windup'
- * '<S3>'   : 'untitled/Discrete PID Controller/D Gain'
- * '<S4>'   : 'untitled/Discrete PID Controller/Filter'
- * '<S5>'   : 'untitled/Discrete PID Controller/Filter ICs'
- * '<S6>'   : 'untitled/Discrete PID Controller/I Gain'
- * '<S7>'   : 'untitled/Discrete PID Controller/Ideal P Gain'
- * '<S8>'   : 'untitled/Discrete PID Controller/Ideal P Gain Fdbk'
- * '<S9>'   : 'untitled/Discrete PID Controller/Integrator'
- * '<S10>'  : 'untitled/Discrete PID Controller/Integrator ICs'
- * '<S11>'  : 'untitled/Discrete PID Controller/N Copy'
- * '<S12>'  : 'untitled/Discrete PID Controller/N Gain'
- * '<S13>'  : 'untitled/Discrete PID Controller/P Copy'
- * '<S14>'  : 'untitled/Discrete PID Controller/Parallel P Gain'
- * '<S15>'  : 'untitled/Discrete PID Controller/Reset Signal'
- * '<S16>'  : 'untitled/Discrete PID Controller/Saturation'
- * '<S17>'  : 'untitled/Discrete PID Controller/Saturation Fdbk'
- * '<S18>'  : 'untitled/Discrete PID Controller/Sum'
- * '<S19>'  : 'untitled/Discrete PID Controller/Sum Fdbk'
- * '<S20>'  : 'untitled/Discrete PID Controller/Tracking Mode'
- * '<S21>'  : 'untitled/Discrete PID Controller/Tracking Mode Sum'
- * '<S22>'  : 'untitled/Discrete PID Controller/Tsamp - Integral'
- * '<S23>'  : 'untitled/Discrete PID Controller/Tsamp - Ngain'
- * '<S24>'  : 'untitled/Discrete PID Controller/postSat Signal'
- * '<S25>'  : 'untitled/Discrete PID Controller/preSat Signal'
- * '<S26>'  : 'untitled/Discrete PID Controller/Anti-windup/Disc. Clamping Parallel'
- * '<S27>'  : 'untitled/Discrete PID Controller/Anti-windup/Disc. Clamping Parallel/Dead Zone'
- * '<S28>'  : 'untitled/Discrete PID Controller/Anti-windup/Disc. Clamping Parallel/Dead Zone/Enabled'
- * '<S29>'  : 'untitled/Discrete PID Controller/D Gain/Disabled'
- * '<S30>'  : 'untitled/Discrete PID Controller/Filter/Disabled'
- * '<S31>'  : 'untitled/Discrete PID Controller/Filter ICs/Disabled'
- * '<S32>'  : 'untitled/Discrete PID Controller/I Gain/Internal Parameters'
- * '<S33>'  : 'untitled/Discrete PID Controller/Ideal P Gain/Passthrough'
- * '<S34>'  : 'untitled/Discrete PID Controller/Ideal P Gain Fdbk/Disabled'
- * '<S35>'  : 'untitled/Discrete PID Controller/Integrator/Discrete'
- * '<S36>'  : 'untitled/Discrete PID Controller/Integrator ICs/Internal IC'
- * '<S37>'  : 'untitled/Discrete PID Controller/N Copy/Disabled wSignal Specification'
- * '<S38>'  : 'untitled/Discrete PID Controller/N Gain/Disabled'
- * '<S39>'  : 'untitled/Discrete PID Controller/P Copy/Disabled'
- * '<S40>'  : 'untitled/Discrete PID Controller/Parallel P Gain/Disabled'
- * '<S41>'  : 'untitled/Discrete PID Controller/Reset Signal/Disabled'
- * '<S42>'  : 'untitled/Discrete PID Controller/Saturation/Enabled'
- * '<S43>'  : 'untitled/Discrete PID Controller/Saturation Fdbk/Disabled'
- * '<S44>'  : 'untitled/Discrete PID Controller/Sum/Passthrough_I'
- * '<S45>'  : 'untitled/Discrete PID Controller/Sum Fdbk/Disabled'
- * '<S46>'  : 'untitled/Discrete PID Controller/Tracking Mode/Disabled'
- * '<S47>'  : 'untitled/Discrete PID Controller/Tracking Mode Sum/Passthrough'
- * '<S48>'  : 'untitled/Discrete PID Controller/Tsamp - Integral/Passthrough'
- * '<S49>'  : 'untitled/Discrete PID Controller/Tsamp - Ngain/Passthrough'
- * '<S50>'  : 'untitled/Discrete PID Controller/postSat Signal/Forward_Path'
- * '<S51>'  : 'untitled/Discrete PID Controller/preSat Signal/Forward_Path'
+ * '<Root>' : 'quadrotor_controller/Altitude Controller'
+ * '<S1>'   : 'quadrotor_controller/Altitude Controller/Discrete PID Controller'
+ * '<S2>'   : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Anti-windup'
+ * '<S3>'   : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/D Gain'
+ * '<S4>'   : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Filter'
+ * '<S5>'   : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Filter ICs'
+ * '<S6>'   : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/I Gain'
+ * '<S7>'   : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Ideal P Gain'
+ * '<S8>'   : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Ideal P Gain Fdbk'
+ * '<S9>'   : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Integrator'
+ * '<S10>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Integrator ICs'
+ * '<S11>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/N Copy'
+ * '<S12>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/N Gain'
+ * '<S13>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/P Copy'
+ * '<S14>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Parallel P Gain'
+ * '<S15>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Reset Signal'
+ * '<S16>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Saturation'
+ * '<S17>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Saturation Fdbk'
+ * '<S18>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Sum'
+ * '<S19>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Sum Fdbk'
+ * '<S20>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Tracking Mode'
+ * '<S21>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Tracking Mode Sum'
+ * '<S22>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Tsamp - Integral'
+ * '<S23>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Tsamp - Ngain'
+ * '<S24>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/postSat Signal'
+ * '<S25>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/preSat Signal'
+ * '<S26>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Anti-windup/Disabled'
+ * '<S27>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/D Gain/Internal Parameters'
+ * '<S28>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Filter/Disc. Forward Euler Filter'
+ * '<S29>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Filter ICs/Internal IC - Filter'
+ * '<S30>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/I Gain/Disabled'
+ * '<S31>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Ideal P Gain/Passthrough'
+ * '<S32>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Ideal P Gain Fdbk/Disabled'
+ * '<S33>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Integrator/Disabled'
+ * '<S34>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Integrator ICs/Disabled'
+ * '<S35>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/N Copy/Disabled'
+ * '<S36>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/N Gain/Internal Parameters'
+ * '<S37>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/P Copy/Disabled'
+ * '<S38>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Parallel P Gain/Internal Parameters'
+ * '<S39>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Reset Signal/Disabled'
+ * '<S40>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Saturation/Passthrough'
+ * '<S41>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Saturation Fdbk/Disabled'
+ * '<S42>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Sum/Sum_PD'
+ * '<S43>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Sum Fdbk/Disabled'
+ * '<S44>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Tracking Mode/Disabled'
+ * '<S45>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Tracking Mode Sum/Passthrough'
+ * '<S46>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Tsamp - Integral/Disabled wSignal Specification'
+ * '<S47>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/Tsamp - Ngain/Passthrough'
+ * '<S48>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/postSat Signal/Forward_Path'
+ * '<S49>'  : 'quadrotor_controller/Altitude Controller/Discrete PID Controller/preSat Signal/Forward_Path'
  */
 #endif                                 /* RTW_HEADER_Discrete_h_ */
