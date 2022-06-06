@@ -36,7 +36,6 @@
 extern "C" {
 	#include "bmp180.h"
 	#include "gy-us42v2.h"
-
 }
 
 /* USER CODE END Includes */
@@ -131,12 +130,12 @@ volatile short int i;
 int ch[CH_NUM+1];
 unsigned short int sync;
 long int delay_timer, current_time, arm_timer, test_timer, disarm_timer, sent_time;
-bool delay_start, arm_start, armed, motor_start, disarm_start;
+bool delay_start, arm_start, armed, motor_start, disarm_start, sonar_ready;
 double w_ang;
-float baro_alt, sonar_alt, sonar_alt_, sonar_vel;
+float baro_alt, sonar_alt, sonar_alt_, sonar_vel, sonar_vel_, sonar_acc;
 unsigned int sonar_range;
 unsigned long sonar_send_time, controller_time, controller_time_pass;
-unsigned short int controller_counter, sonar_counter;
+unsigned short int controller_counter, sonar_counter, sonar_acc_counter;
 bmp_t bmp;
 MedianFilter<int, 100> sonar_filt;
 
@@ -774,20 +773,33 @@ int16_t GyroOku (uint8_t addr) {
 
 
 void PWMYaz() {
-	  if(ch[EMERGENCY_CH-1] < 1500 && ch[3-1] > 1050) {
-		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,controller_output[0]);
-		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,controller_output[1]);
-		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,controller_output[2]);
-		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,controller_output[3]);
+	  if(armed) {
+
+		  if(!motor_start) {
+		  	  MotorBaslat();
+		  	  motor_start = true;
+		  }
+
+		  if(ch[EMERGENCY_CH-1] < 1500 && ch[3-1] > 1050) {
+
+
+			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,controller_output[0]);
+			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,controller_output[1]);
+			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,controller_output[2]);
+			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,controller_output[3]);
+		  }
+
+		  else if(motor_start) {
+			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,1000);
+			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,1000);
+			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,1000);
+			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,1000);
+
+		  }
 	  }
 
-	  else {
-		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,1000);
-		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,1000);
-		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,1000);
-		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,1000);
 
-	  }
+
 }
 
 
@@ -836,18 +848,34 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 			//sonar_range = getRange();
 		}
 
+
+
 		else if (get_ucounter() == SONAR_CLOCK_RATE) {
 		  sonar_range = getRange();
 		  sonar_alt_ = sonar_alt;
 		  sonar_alt = (float)sonar_range/100.0 * cos(abs(deg2rad*state.angles[0]))* cos(abs(deg2rad*state.angles[1]));
 		  float sonar_st = (float)(1.0/SONAR_CLOCK);
-		  sonar_vel = (sonar_alt - sonar_alt_) / sonar_st;
-
-		  if(abs(sonar_vel) > 10) {
-			  sonar_alt = sonar_alt_;
-			  sonar_vel = (sonar_alt - sonar_alt_) / sonar_st;
+		  sonar_vel_ = sonar_vel;
+		  sonar_vel  = (sonar_alt - sonar_alt_) / sonar_st;
+		  sonar_acc  = (sonar_vel - sonar_vel_) / sonar_st;
+/*
+		  if(sonar_ready) {
+				  if(abs(sonar_acc) > 40) {
+						  sonar_alt = sonar_alt_;
+						  sonar_vel = sonar_vel_;
+					  }
 		  }
 
+		  else {
+			  sonar_acc_counter++;
+		  }
+
+			//Sonar is ready for acc measurement
+			if(sonar_acc_counter > 10) {
+				  sonar_ready = true;
+
+			}
+*/
 		}
 
 		//}
@@ -903,7 +931,8 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		 // printf("roll: %d\r\n",int(roll));
 
 
-		  controller_output_ang = controller.Run(state, state_des, ch[2]);
+		  controller_output_ang = controller.Run(state, state_des, ch[2]);	//Stabilize
+		  //controller_output_ang = controller.Run(state, state_des, sonar_vel);	//Alt Hold
 		  controller_output[0] = controller.controller_output_pwm[0];
 		  controller_output[1] = controller.controller_output_pwm[1];
 		  controller_output[2] = controller.controller_output_pwm[2];
@@ -922,14 +951,9 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  w3 = controller_output[2];
 		  w4 = controller_output[3];
 
-		  if(armed) {
-			  if(!motor_start) {
-				  MotorBaslat();
-				  motor_start = true;
-			  }
 
-			  PWMYaz();
-		  }
+		  PWMYaz();
+
 
 		  HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_1);
 		}

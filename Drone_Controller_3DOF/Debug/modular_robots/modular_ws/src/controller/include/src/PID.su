@@ -9,4 +9,5 @@ PID.cpp:94:9:double PID::Sat(double, int, int)	32	static
 PID.cpp:115:7:float PID::pwm2ang(short unsigned int)	40	static
 PID.cpp:134:7:float PID::pwm2rate(short unsigned int)	32	static
 PID.cpp:144:7:float PID::pwm2mot(short unsigned int, int)	48	static
-PID.cpp:153:1:PID::~PID()	16	static
+PID.cpp:153:14:unsigned int PID::F2thr(float)	40	static
+PID.cpp:163:1:PID::~PID()	16	static
