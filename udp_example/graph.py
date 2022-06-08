@@ -46,7 +46,8 @@ class Telem(Enum):
       baro_alt=33
       sonar_alt=34
       sonar_vel = 35
-      time_millis=36
+      alt_thr = 36
+      time_millis=37
 
 exit = True      
 for telem in Telem:
@@ -105,7 +106,7 @@ def animate(i,data_enum):
         (data, addr) = mySocket.recvfrom(1024)
 
         empty_socket(mySocket)
-        data_org = struct.unpack('<ffffffffffffHHHHfffffffffffffffffffL', data)
+        data_org = struct.unpack('<ffffffffffffHHHHffffffffffffffffffffL', data)
 
         data_enum.append(data_org[telem_value-1])  
         #pitch.append(data_org[1])

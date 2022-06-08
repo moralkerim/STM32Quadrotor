@@ -28,6 +28,7 @@
 #include <string.h>
 #include <vector>
 #include <math.h>
+
 #include "Kalman.hpp"
 #include "Controller.hpp"
 #include "TelemData.h"
@@ -67,7 +68,7 @@ extern "C" {
 #define CNTRL_CLOCK 400
 #define SONAR_CLOCK 16
 
-#define SONAR_CLOCK_RATE 50
+#define SONAR_CLOCK_RATE 80
 
 
 #define I2C_READ 0x01
@@ -80,6 +81,7 @@ extern "C" {
 #define CH_NUM 8
 #define CH0 5000
 #define EMERGENCY_CH 5
+#define MOD_CH 6
 
 /* USER CODE END PM */
 
@@ -137,7 +139,8 @@ unsigned int sonar_range;
 unsigned long sonar_send_time, controller_time, controller_time_pass;
 unsigned short int controller_counter, sonar_counter, sonar_acc_counter;
 bmp_t bmp;
-MedianFilter<int, 100> sonar_filt;
+MedianFilter<int, 20> sonar_filt;
+float S11, S12, S21, S22;
 
 /* USER CODE END PV */
 
@@ -747,6 +750,8 @@ void TelemPack() {
 	  telem_pack.sonar_vel = sonar_vel;
 	  telem_pack.baro_alt = baro_alt;
 
+	  telem_pack.alt_thr = controller.alt_thr;
+
 	  telem_pack.time_millis = HAL_GetTick();
 	  memcpy(buf,&telem_pack,sizeof(telem_pack));
 }
@@ -837,6 +842,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 	if(htim == &htim2) {
 		//1.25 ms || 800 Hz
 		set_ucounter(SONAR_CLOCK_RATE);
+		set_b_counter(12);
 
 		controller_counter++;
 
@@ -849,15 +855,43 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		}
 
 
-
 		else if (get_ucounter() == SONAR_CLOCK_RATE) {
 		  sonar_range = getRange();
 		  sonar_alt_ = sonar_alt;
+		  sonar_vel_ = sonar_vel;
 		  sonar_alt = (float)sonar_range/100.0 * cos(abs(deg2rad*state.angles[0]))* cos(abs(deg2rad*state.angles[1]));
 		  float sonar_st = (float)(1.0/SONAR_CLOCK);
-		  sonar_vel_ = sonar_vel;
+		  float z = sonar_alt;
+
+		  float Q = 2.92e-3;
+		  float sa = 1e-6;
+		  float sv = sa / sonar_st;
+
+		  /*
+		  sonar_alt =   sonar_alt_ - ((S11 + sa)*(sonar_alt_ - z))/(Q + S11 + sa);
+		  S11 =  -(S11 + sa)*((S11 + sa)/(Q + S11 + sa) - 1);
+		   */
+		  sonar_alt = sonar_alt_ + sonar_st*sonar_vel_ - ((sonar_alt_ - z + sonar_st*sonar_vel_)*(S11 + (sa) + S21*sonar_st + (sonar_st)*(S12 + S22*sonar_st)))/(Q + S11 + (sa) + S21*sonar_st + (sonar_st)*(S12 + S22*sonar_st));
+		  sonar_vel = sonar_vel_ - ((S21 + (sv) + S22*(sonar_st))*(sonar_alt_ - z + sonar_st*sonar_vel_))/(Q + S11 + (sa) + S21*sonar_st + (sonar_st)*(S12 + S22*sonar_st));
+
+		  S11 =-((S11 + (sa) + S21*sonar_st + (sonar_st)*(S12 + S22*sonar_st))/(Q + S11 + (sa) + S21*sonar_st + (sonar_st)*(S12 + S22*sonar_st)) - 1)*(S11 + (sa) + S21*sonar_st + (sonar_st)*(S12 + S22*sonar_st));
+		  S12 = -((S11 + (sa) + S21*sonar_st + (sonar_st)*(S12 + S22*sonar_st))/(Q + S11 + (sa) + S21*sonar_st + (sonar_st)*(S12 + S22*sonar_st)) - 1)*(S12 + (sa) + S22*sonar_st);
+		  S21 = S21 + (sv) + S22*(sonar_st) - ((S21 + (sv) + S22*(sonar_st))*(S11 + (sa) + S21*sonar_st + (sonar_st)*(S12 + S22*sonar_st)))/(Q + S11 + (sa) + S21*sonar_st + (sonar_st)*(S12 + S22*sonar_st));
+		  S22 = S22 + (sv) - ((S21 + (sv) + S22*(sonar_st))*(S12 + (sa) + S22*sonar_st))/(Q + S11 + (sa) + S21*sonar_st + (sonar_st)*(S12 + S22*sonar_st));
+
+		  /*
+		  sonar_filt.addSample(sonar_alt);
+		  sonar_alt = sonar_filt.getMedian();
+
 		  sonar_vel  = (sonar_alt - sonar_alt_) / sonar_st;
-		  sonar_acc  = (sonar_vel - sonar_vel_) / sonar_st;
+*/
+
+
+		  if(abs(sonar_vel) > 5) {
+				  sonar_alt = sonar_alt_;
+				  sonar_vel  = sonar_vel_;
+			  }
+
 /*
 		  if(sonar_ready) {
 				  if(abs(sonar_acc) > 40) {
@@ -876,6 +910,23 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 			}
 */
+		}
+
+		if(get_b_counter() == 1) {
+			write_ut();
+		}
+
+		else if(get_b_counter() == 5) { //5 ms
+			bmp.uncomp.temp = read_ut ();
+			bmp.data.temp = get_temp (&bmp);
+			write_up();
+		}
+
+		else if(get_b_counter() == 12) { //
+			bmp.uncomp.press = read_up (bmp.oss);
+			bmp.data.press = get_pressure (bmp);
+			bmp.data.altitude = get_altitude (&bmp);
+			baro_alt = bmp.data.altitude;
 		}
 
 		//}
@@ -930,9 +981,16 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		 // alpha_des = 0;
 		 // printf("roll: %d\r\n",int(roll));
 
+		  if(ch[MOD_CH-1] < 1500) {
+			  controller_output_ang = controller.Run(state, state_des, ch[2]);	//Stabilize
+			  controller.p_alt.reset();
+		  }
 
-		  controller_output_ang = controller.Run(state, state_des, ch[2]);	//Stabilize
-		  //controller_output_ang = controller.Run(state, state_des, sonar_vel);	//Alt Hold
+		  else {
+
+			  controller_output_ang = controller.Run(state, state_des, sonar_vel);	//Alt Hold
+
+		  }
 		  controller_output[0] = controller.controller_output_pwm[0];
 		  controller_output[1] = controller.controller_output_pwm[1];
 		  controller_output[2] = controller.controller_output_pwm[2];

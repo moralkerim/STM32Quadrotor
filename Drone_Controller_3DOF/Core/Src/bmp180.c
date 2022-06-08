@@ -15,6 +15,9 @@
 //bmp_t bmp;
 
 extern I2C_HandleTypeDef hi2c1;
+static int b_t_counter;
+static int b_p_counter;
+static int b_counter;
 
 /*!
 * @brief:    - Read and check bmp chip ID.This value is fixed to 0x55,
@@ -149,6 +152,23 @@ int32_t get_ut (void)
 	return (out_buff[0] << BYTE_SHIFT) | out_buff[1];
 }
 
+void write_ut (void)
+{
+	uint8_t out_buff[2];
+
+	//BMP_SET_I2CRW_REG (out_buff[0], BMP_SET_TEMP_CONV);
+	out_buff[0] = BMP_SET_TEMP_CONV;
+	HAL_I2C_Mem_Write( &hi2c1, BMP_WRITE_ADDR, BMP_CTRL_REG, 1, out_buff, 1, BMP_I2C_TIMEOUT );
+}
+
+int32_t read_ut (void)
+{
+	uint8_t out_buff[2];
+	HAL_I2C_Mem_Read ( &hi2c1, BMP_READ_ADDR, BMP_DATA_MSB_ADDR, 1, out_buff, 2, BMP_I2C_TIMEOUT );
+
+	return (out_buff[0] << BYTE_SHIFT) | out_buff[1];
+}
+
 /*!
 * @brief:    - Calc true temperature.
 * @param[in] - pointer to struct of type bmp_t
@@ -187,6 +207,27 @@ int32_t get_up (oss_t oss)
 	out_buff[0] = BMP_SET_PRESS_CONV;
 	HAL_I2C_Mem_Write ( &hi2c1, BMP_WRITE_ADDR, BMP_CTRL_REG, 1, out_buff, 1, BMP_I2C_TIMEOUT );
 	HAL_Delay (oss.wait_time);
+	HAL_I2C_Mem_Read(&hi2c1, BMP_READ_ADDR, BMP_DATA_MSB_ADDR, 1, out_buff, 3, BMP_I2C_TIMEOUT);
+
+	up = ((out_buff[0] << SHORT_SHIFT) + (out_buff[1] << BYTE_SHIFT) + out_buff[2]) >> (8 - oss.ratio);
+	return up;
+}
+
+void write_up (void)
+{
+	uint8_t out_buff[3] = {0};
+	long up = 0;
+
+	//BMP_SET_I2CRW_REG (out_buff[0], BMP_SET_PRESS_CONV);
+	out_buff[0] = BMP_SET_PRESS_CONV;
+	HAL_I2C_Mem_Write ( &hi2c1, BMP_WRITE_ADDR, BMP_CTRL_REG, 1, out_buff, 1, BMP_I2C_TIMEOUT );
+}
+
+int32_t read_up (oss_t oss)
+{
+	uint8_t out_buff[3] = {0};
+	long up = 0;
+	//Delay BMP_OSS1_CONV_TIME
 	HAL_I2C_Mem_Read(&hi2c1, BMP_READ_ADDR, BMP_DATA_MSB_ADDR, 1, out_buff, 3, BMP_I2C_TIMEOUT);
 
 	up = ((out_buff[0] << SHORT_SHIFT) + (out_buff[1] << BYTE_SHIFT) + out_buff[2]) >> (8 - oss.ratio);
@@ -248,6 +289,43 @@ float get_altitude (bmp_t * bmp)
 	}
 
 	return altitude;
+}
+
+void set_b_t_counter(unsigned int CLOCK_RATE) {
+
+	b_t_counter++;
+	if(b_t_counter > CLOCK_RATE) {
+		b_t_counter = 0;
+	}
+}
+
+int get_b_t_counter(void) {
+	return b_t_counter;
+}
+
+
+int get_b_counter(void) {
+	return b_counter;
+}
+
+void set_b_counter(unsigned int CLOCK_RATE) {
+
+	b_counter++;
+	if(b_counter > CLOCK_RATE) {
+		b_counter = 0;
+	}
+}
+
+void set_b_p_counter(unsigned int CLOCK_RATE) {
+
+	b_p_counter++;
+	if(b_p_counter > CLOCK_RATE) {
+		b_p_counter = 0;
+	}
+}
+
+int get_b_p_counter(void) {
+	return b_p_counter;
 }
 
 

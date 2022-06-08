@@ -179,3 +179,15 @@ int32_t get_pressure(bmp_t bmp);
 * @return    - altitude in meters.
 */
 float get_altitude (bmp_t * bmp);
+void set_b_counter(unsigned int CLOCK_RATE);
+void set_b_p_counter(unsigned int CLOCK_RATE);
+void set_b_t_counter(unsigned int CLOCK_RATE);
+
+int get_b_counter(void);
+int get_b_p_counter(void);
+int get_b_t_counter(void);
+
+void write_ut (void);
+int32_t read_ut (void);
+void write_up (void);
+int32_t read_up (oss_t oss);

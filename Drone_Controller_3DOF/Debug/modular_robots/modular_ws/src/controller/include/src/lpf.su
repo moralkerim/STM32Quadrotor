@@ -1,3 +1,3 @@
-lpf.cpp:3:1:lpf::lpf()	16	static
-lpf.cpp:8:7:float lpf::Run(float)	32	static
-lpf.cpp:18:1:lpf::~lpf()	16	static
+lpf.cpp:3:1:lpf::lpf(double, double, double)	24	static
+lpf.cpp:10:7:float lpf::Run(float)	40	static
+lpf.cpp:21:1:lpf::~lpf()	16	static
