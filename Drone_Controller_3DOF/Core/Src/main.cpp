@@ -109,7 +109,7 @@ struct state state_des;
 struct state state;
 struct telem_pack telem_pack;
 
-const float st = 0.005;
+const float st = 0.0025;
 const float deg2rad = 0.0174;
 //PD Katsayilari
 
@@ -134,13 +134,12 @@ unsigned short int sync;
 long int delay_timer, current_time, arm_timer, test_timer, disarm_timer, sent_time;
 bool delay_start, arm_start, armed, motor_start, disarm_start, sonar_ready;
 double w_ang;
-float baro_alt, sonar_alt, sonar_alt_, sonar_vel, sonar_vel_, sonar_acc;
+float baro_alt, sonar_alt, sonar_alt_, sonar_vel, sonar_vel_, sonar_acc, alt, alt_gnd, vz, baro_gnd;
 unsigned int sonar_range;
 unsigned long sonar_send_time, controller_time, controller_time_pass;
-unsigned short int controller_counter, sonar_counter, sonar_acc_counter;
+unsigned short int controller_counter, sonar_counter;
 bmp_t bmp;
-MedianFilter<int, 20> sonar_filt;
-float S11, S12, S21, S22;
+float S11, S12, S21, S22, S13, S23, S31, S32, S33;
 
 /* USER CODE END PV */
 
@@ -747,8 +746,8 @@ void TelemPack() {
 	  telem_pack.pid_pitch.pd_roll_sat_buf = controller.pid_pitch.pd_roll_sat_buf;
 
 	  telem_pack.sonar_alt = sonar_alt;
-	  telem_pack.sonar_vel = sonar_vel;
-	  telem_pack.baro_alt = baro_alt;
+	  telem_pack.sonar_vel = vz;
+	  telem_pack.baro_alt = alt_gnd;
 
 	  telem_pack.alt_thr = controller.alt_thr;
 
@@ -860,17 +859,12 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  sonar_alt_ = sonar_alt;
 		  sonar_vel_ = sonar_vel;
 		  sonar_alt = (float)sonar_range/100.0 * cos(abs(deg2rad*state.angles[0]))* cos(abs(deg2rad*state.angles[1]));
-		  float sonar_st = (float)(1.0/SONAR_CLOCK);
-		  float z = sonar_alt;
+//		  float sonar_st = (float)(1.0/SONAR_CLOCK);
 
-		  float Q = 2.92e-3;
-		  float sa = 1e-6;
-		  float sv = sa / sonar_st;
+
+
 
 		  /*
-		  sonar_alt =   sonar_alt_ - ((S11 + sa)*(sonar_alt_ - z))/(Q + S11 + sa);
-		  S11 =  -(S11 + sa)*((S11 + sa)/(Q + S11 + sa) - 1);
-		   */
 		  sonar_alt = sonar_alt_ + sonar_st*sonar_vel_ - ((sonar_alt_ - z + sonar_st*sonar_vel_)*(S11 + (sa) + S21*sonar_st + (sonar_st)*(S12 + S22*sonar_st)))/(Q + S11 + (sa) + S21*sonar_st + (sonar_st)*(S12 + S22*sonar_st));
 		  sonar_vel = sonar_vel_ - ((S21 + (sv) + S22*(sonar_st))*(sonar_alt_ - z + sonar_st*sonar_vel_))/(Q + S11 + (sa) + S21*sonar_st + (sonar_st)*(S12 + S22*sonar_st));
 
@@ -878,6 +872,9 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  S12 = -((S11 + (sa) + S21*sonar_st + (sonar_st)*(S12 + S22*sonar_st))/(Q + S11 + (sa) + S21*sonar_st + (sonar_st)*(S12 + S22*sonar_st)) - 1)*(S12 + (sa) + S22*sonar_st);
 		  S21 = S21 + (sv) + S22*(sonar_st) - ((S21 + (sv) + S22*(sonar_st))*(S11 + (sa) + S21*sonar_st + (sonar_st)*(S12 + S22*sonar_st)))/(Q + S11 + (sa) + S21*sonar_st + (sonar_st)*(S12 + S22*sonar_st));
 		  S22 = S22 + (sv) - ((S21 + (sv) + S22*(sonar_st))*(S12 + (sa) + S22*sonar_st))/(Q + S11 + (sa) + S21*sonar_st + (sonar_st)*(S12 + S22*sonar_st));
+*/
+
+
 
 		  /*
 		  sonar_filt.addSample(sonar_alt);
@@ -887,10 +884,6 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 */
 
 
-		  if(abs(sonar_vel) > 5) {
-				  sonar_alt = sonar_alt_;
-				  sonar_vel  = sonar_vel_;
-			  }
 
 /*
 		  if(sonar_ready) {
@@ -927,6 +920,62 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 			bmp.data.press = get_pressure (bmp);
 			bmp.data.altitude = get_altitude (&bmp);
 			baro_alt = bmp.data.altitude;
+
+
+		  //SONAR + BAROMETER (BETA)
+/*
+		  float Q = 100;
+		  float sa = 1e-3;
+		  float sb = 1e-3;
+
+		  float z = baro_alt - 83;
+		  float u = sonar_alt;
+
+		  if (u > 5 || u < 0.3) {
+			  sa = 9e5;
+			  sb = 9e5;
+
+		  }
+*/
+		  /*
+		  bias = u - alt + ((S12 + (sb))*(z - u + bias))/(Q + S22 + (sa));
+		  alt = u - bias + ((S22 + (sa))*(z - u + bias))/(Q + S22 + (sa));
+
+
+
+		  S11 = -((S22 + (sa))/(Q + S22 + (sa)) - 1)*(S22 + (sa));
+		  S12 =  -((S22 + (sa))/(Q + S22 + (sa)) - 1)*(S21 + (sa));
+		  S21 = S12 + (sb) - ((S22 + (sa))*(S12 + (sb)))/(Q + S22 + (sa));
+		  S22 = S11 + (sb) - ((S21 + (sa))*(S12 + (sb)))/(Q + S22 + (sa));
+		  */
+		  /*
+		  alt = alt - bias + ((z - alt + bias)*(S11 - S12 - S21 + S22 + (sa)))/(Q + S11 - S12 - S21 + S22 + (sa));
+		  bias = alt - u + ((S11 - S12 + (sb))*(z - alt + bias))/(Q + S11 - S12 - S21 + S22 + (sa));
+
+		  S11 = -((S11 - S12 - S21 + S22 + (sa))/(Q + S11 - S12 - S21 + S22 + (sa)) - 1)*(S11 - S12 - S21 + S22 + (sa));
+		  S12 = -((S11 - S12 - S21 + S22 + (sa))/(Q + S11 - S12 - S21 + S22 + (sa)) - 1)*(S11 - S21 + (sa));
+		  S21 = S11 - S12 + (sb) - ((S11 - S12 + (sb))*(S11 - S12 - S21 + S22 + (sa)))/(Q + S11 - S12 - S21 + S22 + (sa));
+		  S22 =  S11 + (sb) - ((S11 - S21 + (sa))*(S11 - S12 + (sb)))/(Q + S11 - S12 - S21 + S22 + (sa));
+
+*/
+		  //Only Barometer
+/*
+		  float Q = 10;
+		  float sa = 1e-3;
+		  float sb = 1000;
+
+		  float z = baro_alt;
+
+
+		  alt = alt - bias + ((z - alt + bias)*(S11 - S12 - S21 + S22 + (sa)))/(Q + S11 - S12 - S21 + S22 + (sa));
+		  bias = bias + ((S21 - S22 + (sb))*(z - alt + bias))/(Q + S11 - S12 - S21 + S22 + (sa));
+
+		  S11 = -((S11 - S12 - S21 + S22 + (sa))/(Q + S11 - S12 - S21 + S22 + (sa)) - 1)*(S11 - S12 - S21 + S22 + (sa));
+		  S12 =  -((S11 - S12 - S21 + S22 + (sa))/(Q + S11 - S12 - S21 + S22 + (sa)) - 1)*(S12 - S22 + (sa));
+		  S21 = S21 - S22 + (sb) - ((S21 - S22 + (sb))*(S11 - S12 - S21 + S22 + (sa)))/(Q + S11 - S12 - S21 + S22 + (sa));
+		  S22 = S22 + (sb) - ((S12 - S22 + (sa))*(S21 - S22 + (sb)))/(Q + S11 - S12 - S21 + S22 + (sa));
+
+*/
 		}
 
 		//}
@@ -961,6 +1010,95 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  pitch_acc=asin(accY/acctop)*57.324;					//İvme ölçerden hesaplanan pitch açısı
 
 		  EKF.Run(gyro,acc);
+
+		  float Qb = 1;
+		  float Qs = 0.25;
+		  float sa = 1;
+		  float sv = 1;
+		  float sb = 5;
+		  float dt = st;
+
+		  float u = accZ / 4096 * 9.81;
+
+		  if(sonar_alt > 5 || sonar_alt < 0.3) {
+			  Qs = 10000;
+		  }
+
+		  alt_gnd = (alt_gnd) + dt*(vz) + (u*(dt)*dt)/2;
+		  vz = (vz) + u*(dt);
+		  //baro_gnd = (baro_gnd);
+
+		  S11 = S11 + sa + S21*dt + (dt)*(S12 + S22*dt);
+		  S12 = S12 + S22*dt;
+		  S13 = S13 + S23*dt;
+
+		  S21 = S21 + S22*(dt);
+		  S22 =  S22 + sv;
+		  //S23 = S23;
+
+		  S31 = S31 + S32*(dt);
+		  //S32 = S32;
+		  S33 = S33 + sb;
+
+		  alt_gnd = (Qb*Qs*(alt_gnd) + Qs*S31*(alt_gnd) + Qs*S33*(alt_gnd) + Qs*S11*(baro_alt) + Qs*S13*(baro_alt) - Qs*S11*(baro_gnd) - Qs*S13*(baro_gnd) + Qb*S11*(sonar_alt) + S11*S33*(sonar_alt) - S13*S31*(sonar_alt))/(Qb*Qs + Qb*S11 + Qs*S11 + Qs*S13 + Qs*S31 + Qs*S33 + S11*S33 - S13*S31);
+
+		  vz =
+
+		  (vz) - (((alt_gnd) - (sonar_alt))*(Qb*S21 - S11*S23 + S13*S21 + S21*S33 - S23*S31))/(Qb*Qs + Qb*S11 + Qs*S11 + Qs*S13 + Qs*S31 + Qs*S33 + S11*S33 - S13*S31) - (((alt_gnd) - (baro_alt) + (baro_gnd))*(Qs*S21 + Qs*S23 + S11*S23 - S13*S21))/(Qb*Qs + Qb*S11 + Qs*S11 + Qs*S13 + Qs*S31 + Qs*S33 + S11*S33 - S13*S31);
+
+
+		  baro_gnd =
+
+		  (baro_gnd) - (((alt_gnd) - (sonar_alt))*(Qb*S31 - S11*S33 + S13*S31))/(Qb*Qs + Qb*S11 + Qs*S11 + Qs*S13 + Qs*S31 + Qs*S33 + S11*S33 - S13*S31) - (((alt_gnd) - (baro_alt) + (baro_gnd))*(Qs*S31 + Qs*S33 + S11*S33 - S13*S31))/(Qb*Qs + Qb*S11 + Qs*S11 + Qs*S13 + Qs*S31 + Qs*S33 + S11*S33 - S13*S31);
+
+
+		  S11 =
+
+		  (Qs*(Qb*S11 + S11*S33 - S13*S31))/(Qb*Qs + Qb*S11 + Qs*S11 + Qs*S13 + Qs*S31 + Qs*S33 + S11*S33 - S13*S31);
+
+
+		  S12 =
+
+		  (Qs*(Qb*S12 - S11*S32 + S12*S31 + S12*S33 - S13*S32))/(Qb*Qs + Qb*S11 + Qs*S11 + Qs*S13 + Qs*S31 + Qs*S33 + S11*S33 - S13*S31);
+
+
+		  S13 =
+
+		  (Qs*(Qb*S13 - S11*S33 + S13*S31))/(Qb*Qs + Qb*S11 + Qs*S11 + Qs*S13 + Qs*S31 + Qs*S33 + S11*S33 - S13*S31);
+
+
+		  S21 =
+
+		  (Qs*(Qb*S21 - S11*S23 + S13*S21 + S21*S33 - S23*S31))/(Qb*Qs + Qb*S11 + Qs*S11 + Qs*S13 + Qs*S31 + Qs*S33 + S11*S33 - S13*S31);
+
+
+		  S22 =
+
+		  (Qb*Qs*S22 + Qb*S11*S22 - Qb*S12*S21 + Qs*S11*S22 - Qs*S12*S21 - Qs*S12*S23 + Qs*S13*S22 - Qs*S21*S32 + Qs*S22*S31 + Qs*S22*S33 - Qs*S23*S32 + S11*S22*S33 - S11*S23*S32 - S12*S21*S33 + S12*S23*S31 + S13*S21*S32 - S13*S22*S31)/(Qb*Qs + Qb*S11 + Qs*S11 + Qs*S13 + Qs*S31 + Qs*S33 + S11*S33 - S13*S31);
+
+
+		  S23 =
+
+		  (Qb*Qs*S23 + Qb*S11*S23 - Qb*S13*S21 + Qs*S11*S23 - Qs*S13*S21 - Qs*S21*S33 + Qs*S23*S31)/(Qb*Qs + Qb*S11 + Qs*S11 + Qs*S13 + Qs*S31 + Qs*S33 + S11*S33 - S13*S31);
+
+
+		  S31 =
+
+		  (Qs*(Qb*S31 - S11*S33 + S13*S31))/(Qb*Qs + Qb*S11 + Qs*S11 + Qs*S13 + Qs*S31 + Qs*S33 + S11*S33 - S13*S31);
+
+
+		  S32 =
+
+		  (Qb*Qs*S32 + Qb*S11*S32 - Qb*S12*S31 + Qs*S11*S32 - Qs*S12*S31 - Qs*S12*S33 + Qs*S13*S32)/(Qb*Qs + Qb*S11 + Qs*S11 + Qs*S13 + Qs*S31 + Qs*S33 + S11*S33 - S13*S31);
+
+
+		  S33 =
+
+		  (Qs*(Qb*S11 + S11*S33 - S13*S31))/(Qb*Qs + Qb*S11 + Qs*S11 + Qs*S13 + Qs*S31 + Qs*S33 + S11*S33 - S13*S31);
+
+
+
+
 		  state.angles[0]  	  = EKF.state.angles[0];
 		  state.angles[1] 	  = EKF.state.angles[1];
 		  state.angles[2]     = EKF.state.angles[2];
