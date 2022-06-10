@@ -97,7 +97,7 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 float gyroX, gyroY, gyroZ, gyro_e_x, gyroX_a,gyroX_a_x, accX, accY, accZ;
-float GyroXh, GyroYh, GyroZh;
+float GyroXh, GyroYh, GyroZh, AccXh, AccYh, AccZh;
 float pitch_acc;
 float gyroa_x, gyroa_y, gyroa_z;
 float alpha, bias;
@@ -139,7 +139,7 @@ unsigned int sonar_range;
 unsigned long sonar_send_time, controller_time, controller_time_pass;
 unsigned short int controller_counter, sonar_counter;
 bmp_t bmp;
-float S11, S12, S21, S22, S13, S23, S31, S32, S33;
+float S11, S12, S21, S22, S13, S23, S31, S32, S33=10000;
 
 /* USER CODE END PV */
 
@@ -229,6 +229,7 @@ int main(void)
   //Gyro kalibrasyon hatalarını hesapla.
   HAL_Delay(2000);
   GyroXh=GyroErr(GYRO_X_ADDR)/65.5; GyroYh=GyroErr(GYRO_Y_ADDR)/65.5; GyroZh=GyroErr(GYRO_Z_ADDR)/65.5;
+  AccXh = GyroErr(ACC_X_ADDR); AccYh = GyroErr(ACC_Y_ADDR); AccZh = GyroErr(ACC_Z_ADDR);
   //Kontrolcü Timer'ı
   HAL_TIM_Base_Start_IT(&htim2);
 
@@ -745,8 +746,8 @@ void TelemPack() {
 	  telem_pack.pid_pitch.D = controller.pid_pitch.D;
 	  telem_pack.pid_pitch.pd_roll_sat_buf = controller.pid_pitch.pd_roll_sat_buf;
 
-	  telem_pack.sonar_alt = sonar_alt;
-	  telem_pack.sonar_vel = vz;
+	  telem_pack.sonar_alt = vz;
+	  telem_pack.sonar_vel = sonar_vel;
 	  telem_pack.baro_alt = alt_gnd;
 
 	  telem_pack.alt_thr = controller.alt_thr;
@@ -859,9 +860,18 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  sonar_alt_ = sonar_alt;
 		  sonar_vel_ = sonar_vel;
 		  sonar_alt = (float)sonar_range/100.0 * cos(abs(deg2rad*state.angles[0]))* cos(abs(deg2rad*state.angles[1]));
-//		  float sonar_st = (float)(1.0/SONAR_CLOCK);
+		  float sonar_st = (float)(1.0/SONAR_CLOCK);
+		  sonar_vel = (sonar_alt - sonar_alt_)/sonar_st;
 
+		  /*
+		  if(sonar_alt > 5 || sonar_alt < 0.3) {
+			  sonar_alt = sonar_alt_;
+		  } */
 
+		  if (abs(sonar_vel) > 7) {
+			  sonar_alt = sonar_alt_;
+			  sonar_vel = sonar_vel_;
+		  }
 
 
 		  /*
@@ -1002,28 +1012,28 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  accZ = GyroOku(ACC_Z_ADDR);
 
 		  float acc[3];
-		  acc[0] = accX;
-		  acc[1] = accY;
-		  acc[2] = accZ;
+		  acc[0] = accX;// - AccXh;
+		  acc[1] = accY;// - AccYh;
+		  acc[2] = accZ;// - AccZh;
 
 		  float acctop=sqrt(accX*accX+accY*accY+accZ*accZ);		//Toplam ivme
 		  pitch_acc=asin(accY/acctop)*57.324;					//İvme ölçerden hesaplanan pitch açısı
 
 		  EKF.Run(gyro,acc);
 
-		  float Qb = 1;
+		  float Qb = 2;
 		  float Qs = 0.25;
 		  float sa = 1;
-		  float sv = 1;
+		  float sv = 2;
 		  float sb = 5;
 		  float dt = st;
 
-		  float u = accZ / 4096 * 9.81;
-
+		  float u = (accZ - AccZh) / 4096 * 9.81;
+/*
 		  if(sonar_alt > 5 || sonar_alt < 0.3) {
-			  Qs = 10000;
+			  Qs = 1e4;
 		  }
-
+*/
 		  alt_gnd = (alt_gnd) + dt*(vz) + (u*(dt)*dt)/2;
 		  vz = (vz) + u*(dt);
 		  //baro_gnd = (baro_gnd);
@@ -1094,7 +1104,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 		  S33 =
 
-		  (Qs*(Qb*S11 + S11*S33 - S13*S31))/(Qb*Qs + Qb*S11 + Qs*S11 + Qs*S13 + Qs*S31 + Qs*S33 + S11*S33 - S13*S31);
+		  (Qb*Qs*S33 + Qb*S11*S33 - Qb*S13*S31 + Qs*S11*S33 - Qs*S13*S31)/(Qb*Qs + Qb*S11 + Qs*S11 + Qs*S13 + Qs*S31 + Qs*S33 + S11*S33 - S13*S31);
 
 
 
@@ -1126,7 +1136,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 		  else {
 
-			  controller_output_ang = controller.Run(state, state_des, sonar_vel);	//Alt Hold
+			  controller_output_ang = controller.Run(state, state_des, vz);	//Alt Hold
 
 		  }
 		  controller_output[0] = controller.controller_output_pwm[0];
