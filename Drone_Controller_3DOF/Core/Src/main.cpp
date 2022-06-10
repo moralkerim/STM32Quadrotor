@@ -140,7 +140,7 @@ unsigned long sonar_send_time, controller_time, controller_time_pass;
 unsigned short int controller_counter, sonar_counter;
 bmp_t bmp;
 float S11, S12, S21, S22, S13, S23, S31, S32, S33=10000;
-
+float z0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -1129,14 +1129,17 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		 // alpha_des = 0;
 		 // printf("roll: %d\r\n",int(roll));
 
+
+
 		  if(ch[MOD_CH-1] < 1500) {
 			  controller_output_ang = controller.Run(state, state_des, ch[2]);	//Stabilize
+			  z0 = alt_gnd;
 			  controller.p_alt.reset();
 		  }
 
 		  else {
 
-			  controller_output_ang = controller.Run(state, state_des, vz);	//Alt Hold
+			  controller_output_ang = controller.Run(state, state_des, vz, z0, alt_gnd);	//Alt Hold
 
 		  }
 		  controller_output[0] = controller.controller_output_pwm[0];
