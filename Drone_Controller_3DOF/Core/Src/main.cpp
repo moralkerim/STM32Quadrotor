@@ -859,7 +859,10 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  sonar_range = getRange();
 		  sonar_alt_ = sonar_alt;
 		  sonar_vel_ = sonar_vel;
-		  sonar_alt = (float)sonar_range/100.0 * cos(abs(deg2rad*state.angles[0]))* cos(abs(deg2rad*state.angles[1]));
+
+		  float sonar_roll = abs(deg2rad*state.angles[0]);
+		  float sonar_pitch = abs(deg2rad*state.angles[1]);
+		  sonar_alt = (float)sonar_range/100.0 * cos(sonar_roll)* cos(sonar_pitch);
 		  float sonar_st = (float)(1.0/SONAR_CLOCK);
 		  sonar_vel = (sonar_alt - sonar_alt_)/sonar_st;
 
