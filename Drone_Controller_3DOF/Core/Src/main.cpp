@@ -1141,8 +1141,9 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  }
 
 		  else {
-
-			  controller_output_ang = controller.Run(state, state_des, vz, z0, alt_gnd);	//Alt Hold
+			  //Run (struct state state, struct state state_des, float z_vel, float z0, float z, float ch3)
+			  controller_output_ang = controller.Run(state, state_des, vz, z0, alt_gnd, ch[3-1]);	//Alt Hold
+			  z0 = controller.p_alt.zi;
 
 		  }
 		  controller_output[0] = controller.controller_output_pwm[0];
