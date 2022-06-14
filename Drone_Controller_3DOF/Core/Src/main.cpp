@@ -229,6 +229,17 @@ int main(void)
   HAL_Delay(2000);
   GyroXh=GyroErr(GYRO_X_ADDR)/65.5; GyroYh=GyroErr(GYRO_Y_ADDR)/65.5; GyroZh=GyroErr(GYRO_Z_ADDR)/65.5;
   AccXh = GyroErr(ACC_X_ADDR); AccYh = GyroErr(ACC_Y_ADDR); AccZh = GyroErr(ACC_Z_ADDR);
+
+  //İvmeölçer degerlerini oku
+  accX = GyroOku(ACC_X_ADDR);
+  accY = GyroOku(ACC_Y_ADDR);
+  accZ = GyroOku(ACC_Z_ADDR);
+
+  float acctop=sqrt(accX*accX+accY*accY+accZ*accZ);
+
+  float rad2deg = 57.3248;
+  EKF.PITCH_OFFSET = -1 * asin(accX/acctop)*rad2deg;
+  EKF.ROLL_OFFSET  = -1 * asin(accY/acctop)*rad2deg;
   //Kontrolcü Timer'ı
   HAL_TIM_Base_Start_IT(&htim2);
 
@@ -728,6 +739,8 @@ void TelemPack() {
 	  telem_pack.ekf.roll_acc  = EKF.roll_acc;
 	  telem_pack.ekf.pitch_acc = EKF.pitch_acc;
 
+	  telem_pack.ekf.roll_gyro  = gyroX;
+	  telem_pack.ekf.pitch_gyro = gyroY;
 
 	  telem_pack.ekf.roll_comp =  EKF.roll_comp;
 	  telem_pack.ekf.pitch_comp = EKF.pitch_comp;
