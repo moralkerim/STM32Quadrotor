@@ -758,9 +758,9 @@ void TelemPack() {
 	  telem_pack.pid_pitch.D = controller.pid_pitch.D;
 	  telem_pack.pid_pitch.pd_roll_sat_buf = controller.pid_pitch.pd_roll_sat_buf;
 
-	  telem_pack.sonar_alt = vz;
-	  telem_pack.sonar_vel = sonar_vel;
-	  telem_pack.baro_alt = alt_gnd;
+	  telem_pack.sonar_alt = EKF.sonar_alt;
+	  telem_pack.sonar_vel = EKF.vz;
+	  telem_pack.baro_alt = EKF.alt_gnd;
 
 	  telem_pack.alt_thr = controller.alt_thr;
 
@@ -879,6 +879,16 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  if (abs(sonar_vel) > 7) {
 			  sonar_alt = sonar_alt_;
 			  sonar_vel = sonar_vel_;
+		  }
+
+		  if(sonar_alt > 6 || sonar_alt < 0.3) {
+			  EKF.Qs = 9e9;
+			  EKF.salt = 50;
+		  }
+
+		  else {
+			  EKF.Qs = 0.25;
+			  EKF.salt = 1;
 		  }
 
 		}
