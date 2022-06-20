@@ -227,7 +227,7 @@ int main(void)
   bmp_init(&bmp);
   //Gyro kalibrasyon hatalarını hesapla.
   HAL_Delay(2000);
-  GyroXh=GyroErr(GYRO_X_ADDR)/65.5; GyroYh=GyroErr(GYRO_Y_ADDR)/65.5; GyroZh=GyroErr(GYRO_Z_ADDR)/65.5;
+  GyroXh=GyroErr(GYRO_X_ADDR); GyroYh=GyroErr(GYRO_Y_ADDR); GyroZh=GyroErr(GYRO_Z_ADDR);
   AccXh = GyroErr(ACC_X_ADDR); AccYh = GyroErr(ACC_Y_ADDR); AccZh = GyroErr(ACC_Z_ADDR);
 
   //İvmeölçer degerlerini oku
@@ -682,6 +682,9 @@ void Check_Arm() {
 					armed = true;
 					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
 
+					controller.pid_roll.angle0   = EKF.state[0];
+					controller.pid_pitch.angle0  = EKF.state[1];
+
 				}
 
 		}
@@ -919,9 +922,9 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  controller_counter = 0;
 		  controller_time_pass = HAL_GetTick() - controller_time;
 		  controller_time = HAL_GetTick();
-		  gyroX = (GyroOku(GYRO_X_ADDR))/65.5 - GyroXh;
-		  gyroY = (GyroOku(GYRO_Y_ADDR))/65.5 - GyroYh;
-		  gyroZ = (GyroOku(GYRO_Z_ADDR))/65.5 - GyroZh;
+		  gyroX = (GyroOku(GYRO_X_ADDR)- GyroXh)/65.5 ;
+		  gyroY = (GyroOku(GYRO_Y_ADDR)- GyroYh)/65.5 ;
+		  gyroZ = (GyroOku(GYRO_Z_ADDR)- GyroZh)/65.5 ;
 		  //gyroX_a_x = (GyroOku(GYRO_X_ADDR)-gyro_e_x)/65.5;
 		  //gyroX_a += gyroX_a_x * st;
 

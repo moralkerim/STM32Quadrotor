@@ -1,4 +1,4 @@
-function  fft_log(enum,fs,log_mat)
+function  [fft_mag,f] = fft_log(enum,fs,log_mat)
     N = length(log_mat(:,enum));
     fft_signal = fft(log_mat(:,enum));
     fft_oneSide = fft_signal(1:N/2);
