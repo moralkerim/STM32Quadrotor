@@ -39,6 +39,8 @@ extern "C" {
 	#include "gy-us42v2.h"
 }
 
+#include "Modes.h"
+#include "state.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -96,14 +98,11 @@ TIM_HandleTypeDef htim4;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-float gyroX, gyroY, gyroZ, gyro_e_x, gyroX_a,gyroX_a_x, accX, accY, accZ;
+float gyroX, gyroY, gyroZ, accX, accY, accZ;
 float GyroXh, GyroYh, GyroZh, AccXh, AccYh, AccZh;
 float pitch_acc;
-float gyroa_x, gyroa_y, gyroa_z;
 float alpha, bias;
 float alpha_des;
-float e, e_eski; //PID hatalari
-float ie_roll_sat;
 
 struct state state_des;
 struct state state;
@@ -115,15 +114,13 @@ const float deg2rad = 0.0174;
 
 int timer;
 int IC_val1, IC_val2, pwm_input;
-uint16_t pwm1, pwm2;
-uint16_t pwm_mid = 1200;
 char buf[sizeof(telem_pack)];
 unsigned int micros;
 Kalman_Filtresi EKF;
 PID pid;
 Controller controller;
 int controller_output[4];
-std::vector<double> controller_output_ang;
+std::vector<float> controller_output_ang;
 unsigned short w1,w2,w3,w4;
 
 bool Is_First_Captured;
@@ -136,7 +133,6 @@ bool delay_start, arm_start, armed, motor_start, disarm_start, sonar_ready;
 double w_ang;
 float baro_alt, sonar_alt, sonar_alt_, sonar_vel, sonar_vel_, sonar_acc, alt, alt_gnd, vz, baro_gnd;
 unsigned int sonar_range;
-unsigned long sonar_send_time, controller_time, controller_time_pass;
 unsigned short int controller_counter, sonar_counter;
 bmp_t bmp;
 float z0;
@@ -158,6 +154,7 @@ float GyroErr(uint8_t addr);
 void TelemPack(void);
 void SendTelem(void);
 void PWMYaz();
+void checkMode(int mod_ch);
 void MotorBaslat(void);
 void Check_Arm(void);
 void Check_Disarm(void);
@@ -666,6 +663,22 @@ void MPU6050_Baslat(void) {
 
 }
 
+void checkMode(int mod_ch) {
+	  if(mod_ch < 1500) {
+
+		  controller.mod = STABILIZE;
+		  controller.z0 = EKF.alt_gnd;
+		  controller.p_alt.reset();
+	  }
+
+	  else {
+		  //Run (struct state state, struct state state_des, float z_vel, float z0, float z, float ch3),
+		  controller.mod = ALT_HOLD;
+
+		  //z0 = controller.p_alt.zi;
+
+	  }
+}
 
 void Check_Arm() {
 	if(!armed) {
@@ -682,8 +695,8 @@ void Check_Arm() {
 					armed = true;
 					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
 
-					controller.pid_roll.angle0   = EKF.state[0];
-					controller.pid_pitch.angle0  = EKF.state[1];
+					controller.pid_roll.angle0   = EKF.state.angles[0];
+					controller.pid_pitch.angle0  = EKF.state.angles[1];
 
 				}
 
@@ -856,6 +869,8 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 	if(htim == &htim2) {
 		//1.25 ms || 800 Hz
+
+
 		set_ucounter(SONAR_CLOCK_RATE);
 		set_b_counter(12);
 
@@ -920,8 +935,9 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		if(controller_counter == 2) { //2.5 ms || 400 Hz
 
 		  controller_counter = 0;
-		  controller_time_pass = HAL_GetTick() - controller_time;
-		  controller_time = HAL_GetTick();
+
+
+
 		  gyroX = (GyroOku(GYRO_X_ADDR)- GyroXh)/65.5 ;
 		  gyroY = (GyroOku(GYRO_Y_ADDR)- GyroYh)/65.5 ;
 		  gyroZ = (GyroOku(GYRO_Z_ADDR)- GyroZh)/65.5 ;
@@ -979,20 +995,18 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		 // alpha_des = 0;
 		 // printf("roll: %d\r\n",int(roll));
 
+			checkMode(ch[MOD_CH-1]);
 
+			controller.z_vel = EKF.vz;
+			//controller.z0 = z0;
+			controller.z = EKF.alt_gnd;
 
-		  if(ch[MOD_CH-1] < 1500) {
-			  controller_output_ang = controller.Run(state, state_des, ch[2]);	//Stabilize
-			  z0 = EKF.alt_gnd;
-			  controller.p_alt.reset();
-		  }
+		  controller.state = state;
+		  controller.state_des = state_des;
+		  controller.ch3 = ch[2];
 
-		  else {
-			  //Run (struct state state, struct state state_des, float z_vel, float z0, float z, float ch3)
-			  controller_output_ang = controller.Run(state, state_des, EKF.vz, z0, EKF.alt_gnd, ch[3-1]);	//Alt Hold
-			  z0 = controller.p_alt.zi;
+		  controller_output_ang = controller.Run();
 
-		  }
 		  controller_output[0] = controller.controller_output_pwm[0];
 		  controller_output[1] = controller.controller_output_pwm[1];
 		  controller_output[2] = controller.controller_output_pwm[2];
@@ -1001,7 +1015,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  state_des.rates[0] = controller.roll_rate_des;
 		  state_des.rates[1] = controller.pitch_rate_des;
 
-		  ie_roll_sat = controller.pid_roll.ie_roll_sat;
+		  //ie_roll_sat = controller.pid_roll.ie_roll_sat;
 
 		  w_ang = controller.pd_roll;
 
