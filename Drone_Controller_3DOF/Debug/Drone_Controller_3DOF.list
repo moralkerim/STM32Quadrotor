@@ -19497,9 +19497,9 @@ Controller::Controller() {}
  8007ba8:	3fb33333 	.word	0x3fb33333
  8007bac:	411cf5c3 	.word	0x411cf5c3
  8007bb0:	41f9d70a 	.word	0x41f9d70a
- 8007bb4:	3dcccccd 	.word	0x3dcccccd
- 8007bb8:	3cf5c28f 	.word	0x3cf5c28f
- 8007bbc:	3ca3d70a 	.word	0x3ca3d70a
+ 8007bb4:	3e19999a 	.word	0x3e19999a
+ 8007bb8:	3c23d70a 	.word	0x3c23d70a
+ 8007bbc:	3cf5c28f 	.word	0x3cf5c28f
  8007bc0:	40a00000 	.word	0x40a00000
  8007bc4:	40d00000 	.word	0x40d00000
  8007bc8:	41700000 	.word	0x41700000
