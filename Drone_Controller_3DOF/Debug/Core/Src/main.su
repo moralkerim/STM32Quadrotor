@@ -6,31 +6,33 @@ cmath:463:3:constexpr float std::sqrt(float)	16	static
 stl_vector.h:125:14:std::_Vector_base<float, std::allocator<float> >::_Vector_impl::~_Vector_impl()	16	static
 stl_vector.h:285:7:std::_Vector_base<_Tp, _Alloc>::_Vector_base() [with _Tp = float; _Alloc = std::allocator<float>]	16	static
 stl_vector.h:484:7:std::vector<_Tp, _Alloc>::vector() [with _Tp = float; _Alloc = std::allocator<float>]	16	static
-main.cpp:167:5:int __io_putchar(int)	16	static
-main.cpp:174:6:void Delay(long int)	16	static
-main.cpp:189:5:int main()	24	static
-main.cpp:279:6:void SystemClock_Config()	72	static
-main.cpp:318:13:void MX_I2C1_Init()	8	static
-main.cpp:352:13:void MX_TIM1_Init()	80	static
-main.cpp:429:13:void MX_TIM2_Init()	32	static
-main.cpp:474:13:void MX_TIM3_Init()	48	static
-main.cpp:532:13:void MX_TIM4_Init()	32	static
-main.cpp:577:13:void MX_USART2_UART_Init()	8	static
-main.cpp:610:13:void MX_GPIO_Init()	40	static
-main.cpp:653:6:void MPU6050_Baslat()	32	static
-main.cpp:666:6:void checkMode(int)	16	static
-main.cpp:683:6:void Check_Arm()	8	static
-main.cpp:712:6:void Check_Disarm()	8	static
-main.cpp:734:6:void TelemPack()	8	static
-main.cpp:787:6:void SendTelem()	16	static
-main.cpp:798:9:int16_t GyroOku(uint8_t)	40	static
-main.cpp:808:6:void PWMYaz()	8	static
-main.cpp:839:7:float GyroErr(uint8_t)	24	static
-main.cpp:850:6:void MotorBaslat()	8	static
-main.cpp:859:5:int _write(int32_t, uint8_t*, int32_t)	32	static
-main.cpp:868:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	112	static
-main.cpp:1037:6:void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef*)	16	static
-main.cpp:1085:6:void Error_Handler()	4	static,ignoring_inline_asm
+main.cpp:184:5:int __io_putchar(int)	16	static
+main.cpp:191:6:void Delay(long int)	16	static
+main.cpp:206:5:int main()	24	static
+main.cpp:300:6:void SystemClock_Config()	72	static
+main.cpp:339:13:void MX_I2C1_Init()	8	static
+main.cpp:373:13:void MX_TIM1_Init()	80	static
+main.cpp:450:13:void MX_TIM2_Init()	32	static
+main.cpp:495:13:void MX_TIM3_Init()	48	static
+main.cpp:553:13:void MX_TIM4_Init()	32	static
+main.cpp:598:13:void MX_USART1_UART_Init()	8	static
+main.cpp:631:13:void MX_USART2_UART_Init()	8	static
+main.cpp:662:13:void MX_DMA_Init()	16	static
+main.cpp:680:13:void MX_GPIO_Init()	40	static
+main.cpp:723:6:void MPU6050_Baslat()	32	static
+main.cpp:736:6:void checkMode(int)	16	static
+main.cpp:753:6:void Check_Arm()	8	static
+main.cpp:782:6:void Check_Disarm()	8	static
+main.cpp:804:6:void TelemPack()	8	static
+main.cpp:857:6:void SendTelem()	16	static
+main.cpp:868:9:int16_t GyroOku(uint8_t)	40	static
+main.cpp:878:6:void PWMYaz()	8	static
+main.cpp:909:7:float GyroErr(uint8_t)	24	static
+main.cpp:920:6:void MotorBaslat()	8	static
+main.cpp:929:5:int _write(int32_t, uint8_t*, int32_t)	32	static
+main.cpp:938:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	112	static
+main.cpp:1107:6:void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef*)	16	static
+main.cpp:1155:6:void Error_Handler()	4	static,ignoring_inline_asm
 stl_vector.h:128:2:std::_Vector_base<_Tp, _Alloc>::_Vector_impl::_Vector_impl() [with _Tp = float; _Alloc = std::allocator<float>]	16	static
 allocator.h:153:7:std::allocator< <template-parameter-1-1> >::~allocator() [with _Tp = float]	16	static
 stl_vector.h:330:7:std::_Vector_base<_Tp, _Alloc>::~_Vector_base() [with _Tp = float; _Alloc = std::allocator<float>]	16	static
@@ -61,6 +63,6 @@ alloc_traits.h:545:17:void std::__do_alloc_on_move(_Alloc&, _Alloc&, std::true_t
 new_allocator.h:83:7:__gnu_cxx::new_allocator<_Tp>::new_allocator(const __gnu_cxx::new_allocator<_Tp>&) [with _Tp = float]	16	static
 stl_vector.h:133:2:std::_Vector_base<_Tp, _Alloc>::_Vector_impl::_Vector_impl(const _Tp_alloc_type&) [with _Tp = float; _Alloc = std::allocator<float>]	16	static
 move.h:99:5:constexpr typename std::remove_reference<_Tp>::type&& std::move(_Tp&&) [with _Tp = std::allocator<float>&]	16	static
-main.cpp:1094:1:void __static_initialization_and_destruction_0(int, int)	16	static
-main.cpp:1094:1:cpp)	8	static
-main.cpp:1094:1:cpp)	8	static
+main.cpp:1164:1:void __static_initialization_and_destruction_0(int, int)	16	static
+main.cpp:1164:1:cpp)	8	static
+main.cpp:1164:1:cpp)	8	static
