@@ -3,7 +3,7 @@ cmath:463:3:constexpr float std::sqrt(float)	16	static
 PID.cpp:3:1:PID::PID()	32	static
 PID.cpp:5:7:float PID::P_Angle(float, float, float)	32	static
 PID.cpp:13:7:float PID::P_Sqrt(float, float, float)	40	static
-PID.cpp:23:7:float PID::PI_Alt(float, float, float, float, float, unsigned int)	48	static
+PID.cpp:23:7:float PID::PI_Vel(float, float, float, float, float, unsigned int)	48	static
 PID.cpp:55:7:float PID::PID_Rate2(float, float, float, float, float, float, float)	40	static
 PID.cpp:87:7:float PID::PD_Rate(float, float, float, float, float)	40	static
 PID.cpp:120:6:void PID::reset()	16	static

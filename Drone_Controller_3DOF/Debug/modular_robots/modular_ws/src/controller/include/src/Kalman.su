@@ -1,5 +1,5 @@
 cmath:106:3:constexpr float std::asin(float)	16	static
 cmath:463:3:constexpr float std::sqrt(float)	16	static
 Kalman.cpp:5:1:Kalman_Filtresi::Kalman_Filtresi()	32	static
-Kalman.cpp:10:6:void Kalman_Filtresi::Run()	128	static
-Kalman.cpp:304:1:Kalman_Filtresi::~Kalman_Filtresi()	16	static
+Kalman.cpp:10:6:void Kalman_Filtresi::Run()	144	static
+Kalman.cpp:346:1:Kalman_Filtresi::~Kalman_Filtresi()	16	static

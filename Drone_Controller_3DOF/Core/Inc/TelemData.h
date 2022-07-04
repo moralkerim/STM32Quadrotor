@@ -4,6 +4,32 @@ struct attitude {
     float yaw;
 }__attribute__ ((packed));
 
+struct acc {
+    float x;
+    float y;
+    float z;
+}__attribute__ ((packed));
+
+struct cam_data {
+    uint8_t detected;
+    int16_t x;
+    int16_t y;
+    int16_t z_cam;
+    int16_t yaw;
+}__attribute__ ((packed));
+
+struct position_body {
+    float x;
+    float y;
+    float z;
+}__attribute__ ((packed));
+
+struct velocity_body {
+    float x;
+    float y;
+    float z;
+}__attribute__ ((packed));
+
 struct EKF {
     float roll_acc;
     float pitch_acc;
@@ -44,9 +70,11 @@ struct telem_pack {
   struct EKF ekf;
   struct PID_telem pid_roll;
   struct PID_telem pid_pitch;
-  float baro_alt;
   float sonar_alt;
-  float sonar_vel;
   float alt_thr;
+  struct position_body position_body;
+  struct velocity_body velocity_body;
   unsigned long time_millis;
+  struct cam_data cam_data;
+  struct acc acc;
 }__attribute__ ((packed));

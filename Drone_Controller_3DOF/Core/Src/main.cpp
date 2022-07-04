@@ -1,5 +1,8 @@
 /* USER CODE BEGIN Header */
 /**
+ * TO DO:
+ * -Make Qa=0 when disarmed.
+ * -Remove GyroXh from equations.
   ******************************************************************************
   * @file           : main.c
   * @brief          : Main program body
@@ -101,6 +104,8 @@ DMA_HandleTypeDef hdma_usart1_rx;
 
 /* USER CODE BEGIN PV */
 float gyroX, gyroY, gyroZ, accX, accY, accZ;
+float accXc, accYc, accZc;
+float accXs, accYs, accZs;
 float GyroXh, GyroYh, GyroZh, AccXh, AccYh, AccZh;
 float pitch_acc;
 float alpha, bias;
@@ -135,21 +140,12 @@ bool delay_start, arm_start, armed, motor_start, disarm_start, sonar_ready;
 double w_ang;
 float baro_alt, sonar_alt, sonar_alt_, sonar_vel, sonar_vel_, sonar_acc, alt, alt_gnd, vz, baro_gnd;
 unsigned int sonar_range;
-unsigned short int controller_counter, sonar_counter;
+unsigned short int controller_counter, sonar_counter, camera_counter;
 bmp_t bmp;
 float z0;
 
-struct cam_data {
-    uint8_t detected;
-    int16_t x;
-    int16_t y;
-    int16_t z_cam;
-    int16_t yaw;
-}__attribute__ ((packed));
-
 struct cam_data cam_data;
-
-uint8_t rx_buffer[sizeof(cam_data)];
+struct cam_data cam_data_20;
 
 /* USER CODE END PV */
 
@@ -253,11 +249,14 @@ int main(void)
   accY = GyroOku(ACC_Y_ADDR);
   accZ = GyroOku(ACC_Z_ADDR);
 
+  /*
   float acctop=sqrt(accX*accX+accY*accY+accZ*accZ);
 
   float rad2deg = 57.3248;
   EKF.PITCH_OFFSET = -1 * asin(accX/acctop)*rad2deg;
   EKF.ROLL_OFFSET  = -1 * asin(accY/acctop)*rad2deg;
+  */
+
   //Kontrolcü Timer'ı
   HAL_TIM_Base_Start_IT(&htim2);
 
@@ -734,19 +733,23 @@ void MPU6050_Baslat(void) {
 }
 
 void checkMode(int mod_ch) {
-	  if(mod_ch < 1500) {
+	  if(mod_ch < 1400) {
 
 		  controller.mod = STABILIZE;
 		  controller.z0 = EKF.alt_gnd;
 		  controller.p_alt.reset();
 	  }
 
-	  else {
+	  else if (mod_ch >=1400 && mod_ch <1700) {
 		  //Run (struct state state, struct state state_des, float z_vel, float z0, float z, float ch3),
 		  controller.mod = ALT_HOLD;
 
 		  //z0 = controller.p_alt.zi;
 
+	  }
+
+	  else {
+		  controller.mod = ALT_HOLD;
 	  }
 }
 
@@ -811,9 +814,9 @@ void TelemPack() {
 	  telem_pack.pwm.w3 = controller_output[2];
 	  telem_pack.pwm.w4 = controller_output[3];
 
-	  telem_pack.attitude_des.roll  = state_des.angles[0];
-	  telem_pack.attitude_des.pitch = state_des.angles[1];
-	  telem_pack.attitude_des.yaw   = state_des.angles[2];
+	  telem_pack.attitude_des.roll  = controller.roll_des;
+	  telem_pack.attitude_des.pitch = controller.pitch_des;
+	  telem_pack.attitude_des.yaw   = 0;
 
 	  telem_pack.attitude_rate.roll  = state.rates[0];
 	  telem_pack.attitude_rate.pitch = state.rates[1];
@@ -845,12 +848,26 @@ void TelemPack() {
 	  telem_pack.pid_pitch.pd_roll_sat_buf = controller.pid_pitch.pd_roll_sat_buf;
 
 	  telem_pack.sonar_alt = EKF.sonar_alt;
-	  telem_pack.sonar_vel = EKF.vz;
-	  telem_pack.baro_alt = EKF.alt_gnd;
+	  telem_pack.velocity_body.z = EKF.vz;
+	  telem_pack.position_body.z = EKF.alt_gnd;
+
+	  telem_pack.cam_data.detected = cam_data_20.detected;
+	  telem_pack.cam_data.x = cam_data_20.x;
+	  telem_pack.cam_data.y = cam_data_20.y;
+	  telem_pack.cam_data.z_cam = cam_data_20.z_cam;
+
+
+	  telem_pack.position_body.x = EKF.xpos;
+	  telem_pack.velocity_body.x = EKF.vx;
+	  //telem_pack.position_body.y = EKF.ypos;
 
 	  telem_pack.alt_thr = controller.alt_thr;
 
 	  telem_pack.time_millis = HAL_GetTick();
+
+	  telem_pack.acc.x = accX;
+	  telem_pack.acc.y = accY;
+	  telem_pack.acc.z = accZ;
 	  memcpy(buf,&telem_pack,sizeof(telem_pack));
 }
 
@@ -945,6 +962,21 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		set_b_counter(12);
 
 		controller_counter++;
+		camera_counter++;
+
+		if(camera_counter == 40) {
+			  camera_counter = 0;
+			  memcpy(&cam_data_20, &cam_data, sizeof(cam_data));
+			  EKF.camx = (float)cam_data.y/100.0;
+
+			  if(!cam_data.detected) {
+				  EKF.Qc = 9e9;
+			  }
+
+			  else {
+				  EKF.Qc = 2.7e-2;
+			  }
+		}
 
 		if(get_ucounter() == 1) {
 			request_range();
@@ -978,6 +1010,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 			  EKF.Qs = 0.25;
 			  EKF.salt = 1;
 		  }
+
 
 		}
 
@@ -1014,6 +1047,8 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  //gyroX_a_x = (GyroOku(GYRO_X_ADDR)-gyro_e_x)/65.5;
 		  //gyroX_a += gyroX_a_x * st;
 
+
+
 		  //float gyro[3];
 		  EKF.gyro[0] = gyroX;
 		  EKF.gyro[1] = -1*gyroY;
@@ -1024,15 +1059,30 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  accY = GyroOku(ACC_Y_ADDR);
 		  accZ = GyroOku(ACC_Z_ADDR);
 
+		  accXs = (float)accX/4096.0;
+		  accYs = (float)accY/4096.0;
+		  accZs = (float)accZ/4096.0;
+
+		  accXc = 0.815*accXs - 0.42592*accYs - 0.072464*accZs + 0.001334;
+		  accYc = 0.96009*accYs - 0.42592*accXs + 0.0091315*accZs + 0.042165;
+		  accZc = 0.0091315*accYs - 0.072464*accXs + 0.98549*accZs + 0.08443;
+
 		  //float acc[3];
-		  EKF.acc[0] = accX;// - AccXh;
-		  EKF.acc[1] = accY;// - AccYh;
-		  EKF.acc[2] = accZ;// - AccZh;
+		  EKF.acc[0] = accXc;// - AccXh;
+		  EKF.acc[1] = accYc;// - AccYh;
+		  EKF.acc[2] = accZc;// - AccZh;
 
-		  float acctop=sqrt(accX*accX+accY*accY+accZ*accZ);		//Toplam ivme
-		  pitch_acc=asin(accY/acctop)*57.324;					//İvme ölçerden hesaplanan pitch açısı
+		  //float acctop=sqrt(accX*accX+accY*accY+accZ*accZ);		//Toplam ivme
+		 // pitch_acc=asin(accY/acctop)*57.324;					//İvme ölçerden hesaplanan pitch açısı
 
-		  EKF.acc_vert = (accZ - AccZh) / 4096 * 9.81;
+		  float g = 9.81;
+		  EKF.acc_vert = (accZ - AccZh) / 4096 * g;
+		  float accXm = (accX - AccXh) / 4096  * g;
+		  float accYm = (accY - AccYh) / 4096  * g;
+
+		  EKF.accXm = accXm * cos(deg2rad*EKF.state.angles[1]);
+		  EKF.accYm = accYm;
+
 		  EKF.sonar_alt = sonar_alt;
 		  EKF.baro_alt = baro_alt;
 
@@ -1068,6 +1118,8 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 			checkMode(ch[MOD_CH-1]);
 
 			controller.z_vel = EKF.vz;
+			controller.vx	 = EKF.vx;
+			controller.x     = EKF.xpos;
 			//controller.z0 = z0;
 			controller.z = EKF.alt_gnd;
 
