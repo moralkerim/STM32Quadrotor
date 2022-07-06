@@ -241,8 +241,13 @@ int main(void)
   bmp_init(&bmp);
   //Gyro kalibrasyon hatalarını hesapla.
   HAL_Delay(2000);
-  GyroXh=GyroErr(GYRO_X_ADDR); GyroYh=GyroErr(GYRO_Y_ADDR); GyroZh=GyroErr(GYRO_Z_ADDR);
-  AccXh = GyroErr(ACC_X_ADDR); AccYh = GyroErr(ACC_Y_ADDR); AccZh = GyroErr(ACC_Z_ADDR);
+  //EKF.roll_bias=GyroErr(GYRO_X_ADDR)/65.5; EKF.pitch_bias=-1*GyroErr(GYRO_Y_ADDR)/65.5;
+  GyroXh = GyroErr(GYRO_X_ADDR); GyroYh=GyroErr(GYRO_Y_ADDR); GyroZh=GyroErr(GYRO_Z_ADDR);
+  AccXh = GyroErr(ACC_X_ADDR)/4096; AccYh = GyroErr(ACC_Y_ADDR)/4096; AccZh = GyroErr(ACC_Z_ADDR)/4096;
+
+  AccXh = 0.815*AccXh - 0.42592*AccYh - 0.072464*AccZh + 0.001334;
+  AccYh = 0.96009*AccYh - 0.42592*AccXh + 0.0091315*AccZh + 0.042165;
+  AccZh = 0.0091315*AccYh - 0.072464*AccXh + 0.98549*AccZh + 0.08443;
 
   //İvmeölçer degerlerini oku
   accX = GyroOku(ACC_X_ADDR);
@@ -767,9 +772,13 @@ void Check_Arm() {
 					controller.pid_yaw.reset();
 					armed = true;
 					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
+					EKF.sb = 1e-3;
+					EKF.Qa = 5e4;
 
+					/*
 					controller.pid_roll.angle0   = EKF.state.angles[0];
 					controller.pid_pitch.angle0  = EKF.state.angles[1];
+					*/
 
 				}
 
@@ -865,9 +874,9 @@ void TelemPack() {
 
 	  telem_pack.time_millis = HAL_GetTick();
 
-	  telem_pack.acc.x = accX;
-	  telem_pack.acc.y = accY;
-	  telem_pack.acc.z = accZ;
+	  telem_pack.acc.x = accXc;
+	  telem_pack.acc.y = accYc;
+	  telem_pack.acc.z = accZc;
 	  memcpy(buf,&telem_pack,sizeof(telem_pack));
 }
 
@@ -1076,11 +1085,15 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		 // pitch_acc=asin(accY/acctop)*57.324;					//İvme ölçerden hesaplanan pitch açısı
 
 		  float g = 9.81;
-		  EKF.acc_vert = (accZ - AccZh) / 4096 * g;
-		  float accXm = (accX - AccXh) / 4096  * g;
-		  float accYm = (accY - AccYh) / 4096  * g;
+		  EKF.acc_vert = (accZc - 0.99)  * g;
 
-		  EKF.accXm = accXm * cos(deg2rad*EKF.state.angles[1]);
+		  float ax_b = (accXc-AccXh);
+		  ax_b = ax_b - 1 * sin(deg2rad*EKF.state.angles[1]);
+		  ax_b = ax_b * cos(deg2rad*EKF.state.angles[1]);
+		  float accXm = ax_b  * g;
+		  float accYm = (accYc-AccYh)  * g;
+
+		  EKF.accXm = accXm;// * deg2rad*EKF.state.angles[1];
 		  EKF.accYm = accYm;
 
 		  EKF.sonar_alt = sonar_alt;

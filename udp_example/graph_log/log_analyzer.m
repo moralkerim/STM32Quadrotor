@@ -1,5 +1,6 @@
-clear all; clc
-log = fopen('04.07.2022.15.32.30.txt','rt');
+%clear all; clc
+clc
+log = fopen('06.07.2022.19.26.03.txt','rt');
 %(-0.0393805094063282, -4.482371807098389, 0.0, 1000, 1000, 1000, 1000)
 A = textscan(log, '(%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f)');
 fclose(log);
