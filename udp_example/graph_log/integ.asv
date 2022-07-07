@@ -1,0 +1,10 @@
+function [integration] = integ(enum,log_mat)
+%UNTİTLED3 Summary of this function goes here
+%   Detailed explanation goes here
+size = length(log_mat(:,enum));
+integration = zeros(round(size-1,1));
+for i=2:size
+    integration(i) = integration(i-1)
+end
+end
+

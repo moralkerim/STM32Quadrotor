@@ -1,5 +1,7 @@
-log = fopen('22.03.2022.15.28.39.txt','rt');
+%clear all; clc
+clc
+log = fopen('06.07.2022.19.26.03.txt','rt');
 %(-0.0393805094063282, -4.482371807098389, 0.0, 1000, 1000, 1000, 1000)
-A = textscan(log, '(%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d)');
+A = textscan(log, '(%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f)');
 fclose(log);
 log_mat = cell2mat(A);

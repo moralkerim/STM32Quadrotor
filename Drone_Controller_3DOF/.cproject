@@ -86,6 +86,10 @@
                                     <listOptionValue builtIn="false" value="../Drivers/CMSIS/Include"/>
                                     									
                                     <listOptionValue builtIn="false" value="&quot;${workspace_loc:/Drone_Controller_3DOF/modular_robots/modular_ws/src/controller/include/controller}&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/Drone_Controller_3DOF/Discrete/R2020b}&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/Drone_Controller_3DOF/Discrete}&quot;"/>
                                     								
                                 </option>
                                 								
