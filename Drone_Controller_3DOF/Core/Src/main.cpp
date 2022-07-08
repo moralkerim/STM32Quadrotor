@@ -57,6 +57,8 @@ extern "C" {
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
+//MPU6050
+/*
 #define MPU6050 (0x68<<1)
 #define MPU6050_POW_REG 0x6b
 #define MPU6050_DLPF_REG 0x1a
@@ -68,6 +70,21 @@ extern "C" {
 #define ACC_X_ADDR 0x3B
 #define ACC_Y_ADDR 0x3D
 #define ACC_Z_ADDR 0x3F
+*/
+
+#define MPU6050 (0x68<<1)
+#define MPU6050_POW_REG 0x3e
+#define MPU6050_DLPF_REG 0x1a
+#define GYRO_CONF_REG 0x16
+#define GYRO_X_ADDR 0x1D
+#define GYRO_Y_ADDR 0x1F
+#define GYRO_Z_ADDR 0x21
+
+#define ADXL345 (0x53<<1)
+#define ACC_CONF_REG 0x2c
+#define ACC_X_ADDR 0x32
+#define ACC_Y_ADDR 0x34
+#define ACC_Z_ADDR 0x36
 
 #define FULL_CLOCK 800
 #define CNTRL_CLOCK 400
@@ -163,7 +180,9 @@ static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 void MPU6050_Baslat(void);
 int16_t GyroOku (uint8_t addr);
+int16_t AccOku (uint8_t addr);
 float GyroErr(uint8_t addr);
+float AccErr(uint8_t addr);
 void TelemPack(void);
 void SendTelem(void);
 void PWMYaz();
@@ -241,18 +260,20 @@ int main(void)
   bmp_init(&bmp);
   //Gyro kalibrasyon hatalarını hesapla.
   HAL_Delay(2000);
-  //EKF.roll_bias=GyroErr(GYRO_X_ADDR)/65.5; EKF.pitch_bias=-1*GyroErr(GYRO_Y_ADDR)/65.5;
+  //EKF.roll_bias=GyroErr(GYRO_X_ADDR)/14.375; EKF.pitch_bias=-1*GyroErr(GYRO_Y_ADDR)/14.375;
   GyroXh = GyroErr(GYRO_X_ADDR); GyroYh=GyroErr(GYRO_Y_ADDR); GyroZh=GyroErr(GYRO_Z_ADDR);
-  AccXh = GyroErr(ACC_X_ADDR)/4096; AccYh = GyroErr(ACC_Y_ADDR)/4096; AccZh = GyroErr(ACC_Z_ADDR)/4096;
+  AccXh = AccErr(ACC_X_ADDR)* .0078; AccYh = AccErr(ACC_Y_ADDR)* .0078; AccZh = AccErr(ACC_Z_ADDR)* .0078;
 
-  AccXh = 0.815*AccXh - 0.42592*AccYh - 0.072464*AccZh + 0.001334;
-  AccYh = 0.96009*AccYh - 0.42592*AccXh + 0.0091315*AccZh + 0.042165;
-  AccZh = 0.0091315*AccYh - 0.072464*AccXh + 0.98549*AccZh + 0.08443;
+  //AccXh = 0.815*AccXh - 0.42592*AccYh - 0.072464*AccZh + 0.001334;
+  //AccYh = 0.96009*AccYh - 0.42592*AccXh + 0.0091315*AccZh + 0.042165;
+  //AccZh = 0.0091315*AccYh - 0.072464*AccXh + 0.98549*AccZh + 0.08443;
 
   //İvmeölçer degerlerini oku
-  accX = GyroOku(ACC_X_ADDR);
-  accY = GyroOku(ACC_Y_ADDR);
-  accZ = GyroOku(ACC_Z_ADDR);
+
+  accX = AccOku(ACC_X_ADDR);
+  accY = AccOku(ACC_Y_ADDR);
+  accZ = AccOku(ACC_Z_ADDR);
+
 
   /*
   float acctop=sqrt(accX*accX+accY*accY+accZ*accZ);
@@ -727,10 +748,17 @@ static void MX_GPIO_Init(void)
 void MPU6050_Baslat(void) {
 	uint8_t config = 0x00;
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, MPU6050_POW_REG, 1, &config, 1, 5); //Güç registerını aktif et
-	config = 0x08;
+	config = 0x18;
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, GYRO_CONF_REG, 1, &config, 1, 5); //Gyro 250 d/s'ye ayarlandi.
-	config = 0x10;
-	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, ACC_CONF_REG, 1, &config, 1, 5); //Acc +-8g'ye ayarlandi.
+	config = 0x00;
+	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)ADXL345, 0x2d, 1, &config, 1, 5); //Acc +-8g'ye ayarlandi.
+	config = 0x08;
+	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)ADXL345, 0x2d, 1, &config, 1, 5); //Acc +-8g'ye ayarlandi.
+	config = 0x0D;
+	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)ADXL345, 0x2c, 1, &config, 1, 5); //Acc +-8g'ye ayarlandi.
+	config = 0x01;
+	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)ADXL345, 0x31, 1, &config, 1, 5); //Acc +-8g'ye ayarlandi.
+
 	//config = 0x04; //0x04
 	//HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, MPU6050_DLPF_REG, 1, &config, 1, 5); //Low Pass Filter 94 Hz'e ayarlandı
 
@@ -899,7 +927,12 @@ int16_t GyroOku (uint8_t addr) {
 }
 
 
-
+int16_t AccOku (uint8_t addr) {
+	uint8_t gyro_data[2];
+	HAL_I2C_Mem_Read(&hi2c1, (uint16_t)ADXL345 | I2C_READ, addr, 1, gyro_data, 2, 1);
+	int16_t gyro = (gyro_data[1]<<8) | gyro_data[0];
+	return gyro;
+}
 
 void PWMYaz() {
 	  if(armed) {
@@ -937,6 +970,17 @@ float GyroErr(uint8_t addr) {
 	for (int i=0; i<2000; i++)
 	{
 		GyroXh += (GyroOku(addr));
+
+	} //Haberleşmeyi durdur.
+	GyroXh=GyroXh/2000; //Son okunan değeri 2000'e böl.
+	return GyroXh;
+}
+
+float AccErr(uint8_t addr) {
+	float GyroXh=0;
+	for (int i=0; i<2000; i++)
+	{
+		GyroXh += (AccOku(addr));
 
 	} //Haberleşmeyi durdur.
 	GyroXh=GyroXh/2000; //Son okunan değeri 2000'e böl.
@@ -1050,10 +1094,10 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 
 
-		  gyroX = (GyroOku(GYRO_X_ADDR)- GyroXh)/65.5 ;
-		  gyroY = (GyroOku(GYRO_Y_ADDR)- GyroYh)/65.5 ;
-		  gyroZ = (GyroOku(GYRO_Z_ADDR)- GyroZh)/65.5 ;
-		  //gyroX_a_x = (GyroOku(GYRO_X_ADDR)-gyro_e_x)/65.5;
+		  gyroX = (GyroOku(GYRO_X_ADDR)- GyroXh)/14.375 ;
+		  gyroY = (GyroOku(GYRO_Y_ADDR)- GyroYh)/14.375 ;
+		  gyroZ = (GyroOku(GYRO_Z_ADDR)- GyroZh)/14.375 ;
+		  //gyroX_a_x = (GyroOku(GYRO_X_ADDR)-gyro_e_x)/14.375;
 		  //gyroX_a += gyroX_a_x * st;
 
 
@@ -1064,17 +1108,23 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  EKF.gyro[2] = gyroZ;
 
 		  //İvmeölçer degerlerini oku
-		  accX = GyroOku(ACC_X_ADDR);
-		  accY = GyroOku(ACC_Y_ADDR);
-		  accZ = GyroOku(ACC_Z_ADDR);
 
-		  accXs = (float)accX/4096.0;
-		  accYs = (float)accY/4096.0;
-		  accZs = (float)accZ/4096.0;
+		  accX = AccOku(ACC_X_ADDR);
+		  accY = AccOku(ACC_Y_ADDR);
+		  accZ = AccOku(ACC_Z_ADDR);
 
+		  accXs = (float)accX* 0.0078;
+		  accYs = (float)accY* 0.0078;
+		  accZs = (float)accZ* 0.0078;
+
+		  /*
 		  accXc = 0.815*accXs - 0.42592*accYs - 0.072464*accZs + 0.001334;
 		  accYc = 0.96009*accYs - 0.42592*accXs + 0.0091315*accZs + 0.042165;
 		  accZc = 0.0091315*accYs - 0.072464*accXs + 0.98549*accZs + 0.08443;
+		  */
+		  accXc = accXs;
+		  accYc = accYs;
+		  accZc = accZs;
 
 		  //float acc[3];
 		  EKF.acc[0] = accXc;// - AccXh;
@@ -1085,7 +1135,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		 // pitch_acc=asin(accY/acctop)*57.324;					//İvme ölçerden hesaplanan pitch açısı
 
 		  float g = 9.81;
-		  EKF.acc_vert = (accZc - 0.99)  * g;
+		  EKF.acc_vert = (accZc - 1.0)  * g;
 
 		  float ax_b = (accXc-AccXh);
 		  ax_b = ax_b - 1 * sin(deg2rad*EKF.state.angles[1]);
@@ -1095,6 +1145,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 		  EKF.accXm = accXm;// * deg2rad*EKF.state.angles[1];
 		  EKF.accYm = accYm;
+
 
 		  EKF.sonar_alt = sonar_alt;
 		  EKF.baro_alt = baro_alt;
