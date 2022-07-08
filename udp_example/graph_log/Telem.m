@@ -52,6 +52,9 @@ classdef Telem < uint32
       accX ( 47 )
       accY ( 48 )
       accZ ( 49 )
+      magX (  50 )
+      magY (  51 )
+      magZ (  52 )
    end
 end
 

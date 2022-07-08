@@ -18,6 +18,12 @@ struct cam_data {
     int16_t yaw;
 }__attribute__ ((packed));
 
+struct mag {
+    int16_t x;
+    int16_t y;
+    int16_t z;
+}__attribute__ ((packed));
+
 struct position_body {
     float x;
     float y;
@@ -77,4 +83,5 @@ struct telem_pack {
   unsigned long time_millis;
   struct cam_data cam_data;
   struct acc acc;
+  struct mag mag;
 }__attribute__ ((packed));

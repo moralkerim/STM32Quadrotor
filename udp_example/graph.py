@@ -60,6 +60,9 @@ class Telem(Enum):
       accX = 47
       accY = 48
       accZ = 49
+      magX = 50
+      magY = 51
+      magZ = 52
 
 exit = True      
 for telem in Telem:
@@ -118,7 +121,7 @@ def animate(i,data_enum):
         (data, addr) = mySocket.recvfrom(1024)
 
         empty_socket(mySocket)
-        data_org = struct.unpack('<ffffffffffffHHHHffffffffffffffffffffffffLBhhhhfff', data)
+        data_org = struct.unpack('<ffffffffffffHHHHffffffffffffffffffffffffLBhhhhfffhhh', data)
 
         data_enum.append(data_org[telem_value-1])  
         #pitch.append(data_org[1])

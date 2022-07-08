@@ -1,3 +1,4 @@
+"Core/Src/HMC5883L.o"
 "Core/Src/bmp180.o"
 "Core/Src/gy-us42v2.o"
 "Core/Src/main.o"

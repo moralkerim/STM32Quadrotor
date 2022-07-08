@@ -40,6 +40,7 @@
 extern "C" {
 	#include "bmp180.h"
 	#include "gy-us42v2.h"
+	#include "HMC5883L.h"
 }
 
 #include "Modes.h"
@@ -91,7 +92,7 @@ extern "C" {
 #define SONAR_CLOCK 16
 
 #define SONAR_CLOCK_RATE 80
-
+#define MAG_CLOCK_RATE   11
 
 #define I2C_READ 0x01
 
@@ -157,12 +158,16 @@ bool delay_start, arm_start, armed, motor_start, disarm_start, sonar_ready;
 double w_ang;
 float baro_alt, sonar_alt, sonar_alt_, sonar_vel, sonar_vel_, sonar_acc, alt, alt_gnd, vz, baro_gnd;
 unsigned int sonar_range;
-unsigned short int controller_counter, sonar_counter, camera_counter;
+unsigned short int controller_counter, sonar_counter, camera_counter, mag_counter;
 bmp_t bmp;
 float z0;
 
 struct cam_data cam_data;
 struct cam_data cam_data_20;
+struct attitude euler_angles;
+
+int16_t MAG_X, MAG_Y, MAG_Z;
+int16_t MAG_X_CALIB, MAG_Y_CALIB, MAG_Z_CALIB;
 
 /* USER CODE END PV */
 
@@ -190,6 +195,9 @@ void checkMode(int mod_ch);
 void MotorBaslat(void);
 void Check_Arm(void);
 void Check_Disarm(void);
+float square(float x);
+void MagCalib(int16_t MAG_X,int16_t MAG_Y,int16_t MAG_Z);
+struct attitude DCM2Euler(int16_t acc[3], int16_t mag[3]);
 int _write(int32_t file, uint8_t *ptr, int32_t len);
 /* USER CODE END PFP */
 
@@ -258,6 +266,7 @@ int main(void)
   //HAL_UART_Receive_DMA(&huart1, rx_buffer, sizeof(cam_data)-1);
   MPU6050_Baslat();
   bmp_init(&bmp);
+  HMC5883L_initialize();
   //Gyro kalibrasyon hatalarını hesapla.
   HAL_Delay(2000);
   //EKF.roll_bias=GyroErr(GYRO_X_ADDR)/14.375; EKF.pitch_bias=-1*GyroErr(GYRO_Y_ADDR)/14.375;
@@ -765,6 +774,12 @@ void MPU6050_Baslat(void) {
 
 }
 
+void MagCalib(int16_t MAG_X,int16_t MAG_Y,int16_t MAG_Z) {
+	MAG_X_CALIB = 0.94941*MAG_X - 0.0029894*MAG_Y + 0.0042334*MAG_Z - 163.26;
+	MAG_Y_CALIB = 0.94369*MAG_Y - 0.0029894*MAG_X + 0.010705*MAG_Z + 179.65;
+	MAG_Z_CALIB = 0.0042334*MAG_X + 0.010705*MAG_Y + 1.1163*MAG_Z - 139.67;
+}
+
 void checkMode(int mod_ch) {
 	  if(mod_ch < 1400) {
 
@@ -844,7 +859,7 @@ void Check_Disarm() {
 void TelemPack() {
 	  telem_pack.attitude.roll  = state.angles[0];
 	  telem_pack.attitude.pitch = state.angles[1];
-	  telem_pack.attitude.yaw   = state.angles[2];
+	  telem_pack.attitude.yaw   = euler_angles.yaw;
 
 	  telem_pack.pwm.w1 = controller_output[0];
 	  telem_pack.pwm.w2 = controller_output[1];
@@ -905,6 +920,10 @@ void TelemPack() {
 	  telem_pack.acc.x = accXc;
 	  telem_pack.acc.y = accYc;
 	  telem_pack.acc.z = accZc;
+
+	  telem_pack.mag.x = MAG_X;
+	  telem_pack.mag.y = MAG_Y;
+	  telem_pack.mag.z = MAG_Z;
 	  memcpy(buf,&telem_pack,sizeof(telem_pack));
 }
 
@@ -932,6 +951,32 @@ int16_t AccOku (uint8_t addr) {
 	HAL_I2C_Mem_Read(&hi2c1, (uint16_t)ADXL345 | I2C_READ, addr, 1, gyro_data, 2, 1);
 	int16_t gyro = (gyro_data[1]<<8) | gyro_data[0];
 	return gyro;
+}
+
+struct attitude DCM2Euler(int16_t acc[3], int16_t mag[3]) {
+	struct attitude euler_angles;
+	float A = (sqrt(square(acc[0]) + square(acc[1]) + square(acc[2]))*sqrt(square(acc[0]*mag[1] - acc[1]*mag[0]) + square(acc[0]*mag[2] - acc[2]*mag[0]) + square(acc[1]*mag[2] - acc[2]*mag[1])));
+	float DCM11 = (mag[0]*square(acc[1]) - acc[0]*mag[1]*acc[1] + mag[0]*square(acc[2]) - acc[0]*mag[2]*acc[2])/A;
+	float DCM31 = (mag[2]*square(acc[0]) - acc[2]*mag[0]*acc[0] + mag[2]*square(acc[1]) - acc[2]*mag[1]*acc[1])/A;
+	float DCM33 = -acc[2]/sqrt(square(acc[0]) + square(acc[1]) + square(acc[2]));
+	float pitch = -1 * DCM31; //sin(pitch)
+	pitch = asin(pitch);
+	float cp = cos(pitch);
+	float roll = DCM33 / cp;
+	roll = acos(roll);
+	float yaw = DCM11 / cp;
+	yaw = acos(yaw);
+	float rad2deg = 180.0/3.14;
+	euler_angles.pitch  = rad2deg*pitch;
+	euler_angles.roll   = rad2deg*roll;
+	euler_angles.yaw    = rad2deg*yaw;
+	return euler_angles;
+
+}
+
+float square(float x) {
+	float y = pow(x,2);
+	return y;
 }
 
 void PWMYaz() {
@@ -1016,6 +1061,24 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 		controller_counter++;
 		camera_counter++;
+		mag_counter++;
+
+		if(mag_counter == MAG_CLOCK_RATE) {
+			mag_counter = 0;
+			HMC5883L_getMagData(&MAG_X, &MAG_Y, &MAG_Z);
+			MagCalib(MAG_X, MAG_Y, MAG_Z);
+			int16_t mag[3];
+			mag[0] = MAG_X_CALIB;
+			mag[1] = MAG_Y_CALIB;
+			mag[2] = MAG_Z_CALIB;
+
+			int16_t acc[3];
+			acc[0] = accX;
+			acc[1] = accY;
+			acc[2] = accZ;
+			euler_angles = DCM2Euler(acc, mag);
+
+		}
 
 		if(camera_counter == 40) {
 			  camera_counter = 0;
