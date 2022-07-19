@@ -104,7 +104,10 @@ extern "C" {
 #define CH_NUM 8
 #define CH0 5000
 #define EMERGENCY_CH 5
+//#define EMERGENCY_CH 5
 #define MOD_CH 6
+#define CH3_MIN 1000
+
 
 /* USER CODE END PM */
 
@@ -151,7 +154,7 @@ unsigned short w1,w2,w3,w4;
 bool Is_First_Captured;
 volatile int IC_Val2, IC_Val1, Diff, Diff_debug;
 volatile short int i;
-int ch[CH_NUM+1];
+int ch[CH_NUM+1], ch_[CH_NUM+1];
 unsigned short int sync;
 long int delay_timer, current_time, arm_timer, test_timer, disarm_timer, sent_time;
 bool delay_start, arm_start, armed, motor_start, disarm_start, sonar_ready;
@@ -161,6 +164,7 @@ unsigned int sonar_range;
 unsigned short int controller_counter, sonar_counter, camera_counter, mag_counter;
 bmp_t bmp;
 float z0;
+int ch_count;
 
 struct cam_data cam_data;
 struct cam_data cam_data_20;
@@ -260,6 +264,7 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM4_Init();
   MX_USART1_UART_Init();
+
   /* USER CODE BEGIN 2 */
 
   HAL_UART_Receive_DMA(&huart1, (uint8_t*)&cam_data, sizeof(cam_data));
@@ -313,6 +318,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
   while (1)
   {
 	  SendTelem();
@@ -803,7 +809,7 @@ void checkMode(int mod_ch) {
 
 void Check_Arm() {
 	if(!armed) {
-		if((ch[2] < 1100) && (ch[3] > 1700)) {
+		if((ch[2] < CH3_MIN + 100) && (ch[3] > 1700)) {
 				if(!arm_start){
 					arm_timer = HAL_GetTick();
 					arm_start = true;
@@ -957,18 +963,21 @@ struct attitude DCM2Euler(int16_t acc[3], int16_t mag[3]) {
 	struct attitude euler_angles;
 	float A = (sqrt(square(acc[0]) + square(acc[1]) + square(acc[2]))*sqrt(square(acc[0]*mag[1] - acc[1]*mag[0]) + square(acc[0]*mag[2] - acc[2]*mag[0]) + square(acc[1]*mag[2] - acc[2]*mag[1])));
 	float DCM11 = (mag[0]*square(acc[1]) - acc[0]*mag[1]*acc[1] + mag[0]*square(acc[2]) - acc[0]*mag[2]*acc[2])/A;
+	float DCM21 = (mag[1]*square(acc[0]) - acc[1]*mag[0]*acc[0] + mag[1]*square(acc[2]) - acc[1]*mag[2]*acc[2])/A;
 	float DCM31 = (mag[2]*square(acc[0]) - acc[2]*mag[0]*acc[0] + mag[2]*square(acc[1]) - acc[2]*mag[1]*acc[1])/A;
 	float DCM33 = -acc[2]/sqrt(square(acc[0]) + square(acc[1]) + square(acc[2]));
 	float pitch = -1 * DCM31; //sin(pitch)
 	pitch = asin(pitch);
 	float cp = cos(pitch);
-	float roll = DCM33 / cp;
-	roll = acos(roll);
-	float yaw = DCM11 / cp;
-	yaw = acos(yaw);
+	//float roll = DCM33 / cp;
+	//roll = acos(roll);
+	float y = DCM21/cp;
+	float x = DCM11/cp;
+	float yaw = atan2(y,x);
+	//yaw = acos(yaw);
 	float rad2deg = 180.0/3.14;
 	euler_angles.pitch  = rad2deg*pitch;
-	euler_angles.roll   = rad2deg*roll;
+	//euler_angles.roll   = rad2deg*roll;
 	euler_angles.yaw    = rad2deg*yaw;
 	return euler_angles;
 
@@ -987,7 +996,7 @@ void PWMYaz() {
 		  	  motor_start = true;
 		  }
 
-		  if(ch[EMERGENCY_CH-1] < 1500 && ch[3-1] > 1050) {
+		  if(ch[EMERGENCY_CH-1] < 1500 && ch[3-1] > CH3_MIN) {
 
 
 			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,controller_output[0]);
@@ -1300,15 +1309,22 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 
 				}
 				//printf("Diff: %d\n",Diff);
-				ch[i] = Diff;
-				if(1) {
-					if(ch[i] > CH0) {
-						//ch[CH_NUM] = ch[i];
-						i = -1;
-						sync = 1;
+					if(Diff >= 1000 && Diff <= 2000) {
+
+						ch_[i] = ch[i];
+						ch[i] = Diff;
+						ch_count++;
+
 
 					}
-				}
+
+					else if(Diff > CH0) {
+						//ch[CH_NUM] = ch[i];
+						i = -1;
+						ch[CH_NUM] = Diff;
+						sync = 1;
+					}
+
 
 
 

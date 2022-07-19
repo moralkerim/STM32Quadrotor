@@ -13,7 +13,7 @@ PID.cpp:147:9:uint8_t PID::sgn(float)	16	static
 PID.cpp:153:8:float PID::Sat(float, int, int, int)	32	static
 PID.cpp:178:8:float PID::Sat(float, int, int)	32	static
 PID.cpp:199:7:float PID::pwm2ang(short unsigned int)	40	static
-PID.cpp:218:7:float PID::pwm2rate(short unsigned int)	32	static
-PID.cpp:228:7:float PID::pwm2mot(short unsigned int, int)	48	static
-PID.cpp:237:14:unsigned int PID::F2thr(float)	40	static
-PID.cpp:247:1:PID::~PID()	16	static
+PID.cpp:224:7:float PID::pwm2rate(short unsigned int)	32	static
+PID.cpp:240:7:float PID::pwm2mot(short unsigned int, int)	48	static
+PID.cpp:249:14:unsigned int PID::F2thr(float)	40	static
+PID.cpp:259:1:PID::~PID()	16	static
