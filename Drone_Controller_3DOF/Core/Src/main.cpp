@@ -126,11 +126,8 @@ DMA_HandleTypeDef hdma_usart1_rx;
 /* USER CODE BEGIN PV */
 float gyroX, gyroY, gyroZ, accX, accY, accZ;
 float accXc, accYc, accZc;
-float accXs, accYs, accZs;
 float GyroXh, GyroYh, GyroZh, AccXh, AccYh, AccZh;
-float pitch_acc;
-float alpha, bias;
-float alpha_des;
+
 
 struct state state_des;
 struct state state;
@@ -140,16 +137,12 @@ const float st = 0.0025;
 const float deg2rad = 0.0174;
 //PD Katsayilari
 
-int timer;
 int IC_val1, IC_val2, pwm_input;
 char buf[sizeof(telem_pack)];
-unsigned int micros;
 Kalman_Filtresi EKF;
-PID pid;
 Controller controller;
 int controller_output[4];
 std::vector<float> controller_output_ang;
-unsigned short w1,w2,w3,w4;
 
 bool Is_First_Captured;
 volatile int IC_Val2, IC_Val1, Diff, Diff_debug;
@@ -158,7 +151,6 @@ int ch[CH_NUM+1], ch_[CH_NUM+1];
 unsigned short int sync;
 long int delay_timer, current_time, arm_timer, test_timer, disarm_timer, sent_time;
 bool delay_start, arm_start, armed, motor_start, disarm_start, sonar_ready;
-double w_ang;
 float baro_alt, sonar_alt, sonar_alt_, sonar_vel, sonar_vel_, sonar_acc, alt, alt_gnd, vz, baro_gnd;
 unsigned int sonar_range;
 unsigned short int controller_counter, sonar_counter, camera_counter, mag_counter;
@@ -173,6 +165,16 @@ struct attitude euler_angles;
 int16_t MAG_X, MAG_Y, MAG_Z;
 int16_t MAG_X_CALIB, MAG_Y_CALIB, MAG_Z_CALIB;
 
+typedef enum {
+	POSITIVE,
+	NEGATIVE,
+	NEUTRAL
+}sign;
+
+sign yaw_sign = NEUTRAL;
+int8_t yaw_counter;
+uint16_t jump_counter;
+float yaw_prev;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -195,6 +197,8 @@ float AccErr(uint8_t addr);
 void TelemPack(void);
 void SendTelem(void);
 void PWMYaz();
+float pwm2ang(unsigned short int pwm);
+float pwm2rate(unsigned short int pwm);
 void checkMode(int mod_ch);
 void MotorBaslat(void);
 void Check_Arm(void);
@@ -781,9 +785,14 @@ void MPU6050_Baslat(void) {
 }
 
 void MagCalib(int16_t MAG_X,int16_t MAG_Y,int16_t MAG_Z) {
+	/*
 	MAG_X_CALIB = 0.94941*MAG_X - 0.0029894*MAG_Y + 0.0042334*MAG_Z - 163.26;
 	MAG_Y_CALIB = 0.94369*MAG_Y - 0.0029894*MAG_X + 0.010705*MAG_Z + 179.65;
 	MAG_Z_CALIB = 0.0042334*MAG_X + 0.010705*MAG_Y + 1.1163*MAG_Z - 139.67;
+	*/
+	MAG_X_CALIB = 0.9655*MAG_X + 0.01389*MAG_Y - 0.01816*MAG_Z + 16.0;
+	MAG_Y_CALIB = 0.01389*MAG_X + 0.9476*MAG_Y + 0.006714*MAG_Z + 103.3;
+	MAG_Z_CALIB = 0.006714*MAG_Y - 0.01816*MAG_X + 1.094*MAG_Z - 8.554;
 }
 
 void checkMode(int mod_ch) {
@@ -822,7 +831,6 @@ void Check_Arm() {
 					armed = true;
 					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
 					EKF.sb = 1e-3;
-					EKF.Qa = 5e4;
 
 					/*
 					controller.pid_roll.angle0   = EKF.state.angles[0];
@@ -865,7 +873,7 @@ void Check_Disarm() {
 void TelemPack() {
 	  telem_pack.attitude.roll  = state.angles[0];
 	  telem_pack.attitude.pitch = state.angles[1];
-	  telem_pack.attitude.yaw   = euler_angles.yaw;
+	  telem_pack.attitude.yaw   = state.angles[2];
 
 	  telem_pack.pwm.w1 = controller_output[0];
 	  telem_pack.pwm.w2 = controller_output[1];
@@ -874,7 +882,7 @@ void TelemPack() {
 
 	  telem_pack.attitude_des.roll  = controller.roll_des;
 	  telem_pack.attitude_des.pitch = controller.pitch_des;
-	  telem_pack.attitude_des.yaw   = 0;
+	  telem_pack.attitude_des.yaw   = yaw_counter;
 
 	  telem_pack.attitude_rate.roll  = state.rates[0];
 	  telem_pack.attitude_rate.pitch = state.rates[1];
@@ -883,14 +891,14 @@ void TelemPack() {
 	  telem_pack.attitude_rate_des.roll =  state_des.rates[0];
 	  telem_pack.attitude_rate_des.pitch = state_des.rates[1];
 
-	  telem_pack.ekf.roll_acc  = EKF.roll_acc;
-	  telem_pack.ekf.pitch_acc = EKF.pitch_acc;
+	  telem_pack.ekf.roll_acc  = euler_angles.roll;
+	  telem_pack.ekf.pitch_acc = euler_angles.pitch;
 
-	  telem_pack.ekf.roll_gyro  = gyroX;
-	  telem_pack.ekf.pitch_gyro = gyroY;
+	  telem_pack.ekf.roll_gyro  = EKF.gyro[0];
+	  telem_pack.ekf.pitch_gyro = EKF.gyro[1];
 
-	  telem_pack.ekf.roll_comp =  EKF.roll_comp;
-	  telem_pack.ekf.pitch_comp = EKF.pitch_comp;
+	  telem_pack.ekf.roll_comp =  EKF.gyro[2];
+	  telem_pack.ekf.pitch_comp = euler_angles.yaw;
 
 	  telem_pack.ekf.roll_ekf =  EKF.roll_ekf;
 	  telem_pack.ekf.pitch_ekf = EKF.pitch_ekf;
@@ -923,13 +931,13 @@ void TelemPack() {
 
 	  telem_pack.time_millis = HAL_GetTick();
 
-	  telem_pack.acc.x = accXc;
-	  telem_pack.acc.y = accYc;
-	  telem_pack.acc.z = accZc;
+	  telem_pack.acc.x = accX;
+	  telem_pack.acc.y = accY;
+	  telem_pack.acc.z = accZ;
 
-	  telem_pack.mag.x = MAG_X;
-	  telem_pack.mag.y = MAG_Y;
-	  telem_pack.mag.z = MAG_Z;
+	  telem_pack.mag.x = MAG_X_CALIB;
+	  telem_pack.mag.y = MAG_Y_CALIB;
+	  telem_pack.mag.z = MAG_Z_CALIB;
 	  memcpy(buf,&telem_pack,sizeof(telem_pack));
 }
 
@@ -951,6 +959,46 @@ int16_t GyroOku (uint8_t addr) {
 	return gyro;
 }
 
+float pwm2ang(unsigned short int pwm) {
+	int dead_zone = 5;
+
+	int in_min  = 1000;
+	int in_max  = 2000;
+
+	/*
+	int in_min  = 1160;
+	int in_max  = 1850;
+	*/
+	int out_min = -15;
+	int out_max  = 15;
+	unsigned short int pwm_out;
+
+	if(pwm > 1500 - dead_zone && pwm < 1500 + dead_zone) {
+		pwm_out = 1500;
+	}
+
+	else {
+		pwm_out = pwm;
+	}
+
+	return (pwm_out - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+float pwm2rate(unsigned short int pwm) {
+
+	int in_min  = 1000;
+	int in_max  = 2000;
+
+	/*
+	int in_min  = 1160;
+	int in_max  = 1850;
+	 */
+	int out_min = -100;
+	int out_max  = 100;
+
+	return -1 * ((pwm - in_min) * (out_max - out_min) / (in_max - in_min) + out_min);
+}
+
 
 int16_t AccOku (uint8_t addr) {
 	uint8_t gyro_data[2];
@@ -961,30 +1009,77 @@ int16_t AccOku (uint8_t addr) {
 
 struct attitude DCM2Euler(int16_t acc[3], int16_t mag[3]) {
 	struct attitude euler_angles;
-	float A = (sqrt(square(acc[0]) + square(acc[1]) + square(acc[2]))*sqrt(square(acc[0]*mag[1] - acc[1]*mag[0]) + square(acc[0]*mag[2] - acc[2]*mag[0]) + square(acc[1]*mag[2] - acc[2]*mag[1])));
-	float DCM11 = (mag[0]*square(acc[1]) - acc[0]*mag[1]*acc[1] + mag[0]*square(acc[2]) - acc[0]*mag[2]*acc[2])/A;
-	float DCM21 = (mag[1]*square(acc[0]) - acc[1]*mag[0]*acc[0] + mag[1]*square(acc[2]) - acc[1]*mag[2]*acc[2])/A;
-	float DCM31 = (mag[2]*square(acc[0]) - acc[2]*mag[0]*acc[0] + mag[2]*square(acc[1]) - acc[2]*mag[1]*acc[1])/A;
-	float DCM33 = -acc[2]/sqrt(square(acc[0]) + square(acc[1]) + square(acc[2]));
-	float pitch = -1 * DCM31; //sin(pitch)
-	pitch = asin(pitch);
-	float cp = cos(pitch);
-	//float roll = DCM33 / cp;
-	//roll = acos(roll);
-	float y = DCM21/cp;
-	float x = DCM11/cp;
-	float yaw = atan2(y,x);
-	//yaw = acos(yaw);
 	float rad2deg = 180.0/3.14;
-	euler_angles.pitch  = rad2deg*pitch;
+	float acctop = sqrt(acc[0]*acc[0] + acc[1]*acc[1] + acc[2]*acc[2]);
+
+	//float A = (acctop*sqrt(square(acc[0]*mag[1] - acc[1]*mag[0]) + square(acc[0]*mag[2] - acc[2]*mag[0]) + square(acc[1]*mag[2] - acc[2]*mag[1])));
+	//float DCM11 = (mag[0]*acc[1]*acc[1] - acc[0]*mag[1]*acc[1] + mag[0]*acc[2]*acc[2] - acc[0]*mag[2]*acc[2])/A;
+	float DCM11 = (mag[0]*acc[1]*acc[1] - acc[0]*mag[1]*acc[1] + mag[0]*acc[2]*acc[2] - acc[0]*mag[2]*acc[2])/(acctop*sqrt(square(acc[0]*mag[1] - acc[1]*mag[0]) + square(acc[0]*mag[2] - acc[2]*mag[0]) + square(acc[1]*mag[2] - acc[2]*mag[1])));
+	//A = sqrt(square(acc[0]*mag[1] - acc[1]*mag[0]) + square(acc[0]*mag[2] - acc[2]*mag[0]) + square(acc[1]*mag[2] - acc[2]*mag[1]));
+	//float DCM21 = -(acc[1]*mag[2] - acc[2]*mag[1])/A;
+	float DCM21 = -(acc[1]*mag[2] - acc[2]*mag[1])/sqrt(square(acc[0]*mag[1] - acc[1]*mag[0]) + square(acc[0]*mag[2] - acc[2]*mag[0]) + square(acc[1]*mag[2] - acc[2]*mag[1]));
+
+
+	float DCM31 = -acc[0]/acctop;
+	float DCM32 = -acc[1]/acctop;
+	float DCM33 = -acc[2]/acctop;
+	//euler_angles.pitch = rad2deg*atan2(-DCM31,x);
+	float pitch = asin(-DCM31);
+	euler_angles.pitch = rad2deg*pitch;
+	//pitch = asin(pitch);
+	//float cp = cos(pitch);
+	euler_angles.roll = rad2deg*atan(DCM32/DCM33);
+	float yaw = rad2deg*atan2(DCM21,DCM11);
+	//euler_angles.yaw  = rad2deg*atan2(DCM21,DCM11);
+	if((int)euler_angles.yaw < -175 && (int)euler_angles.yaw >= -180) {
+			//yaw_sign = POSITIVE;
+		if(yaw_sign != POSITIVE && EKF.gyro[2] > 0) {
+			yaw_counter++;
+			yaw_sign = POSITIVE;
+		}
+
+	}
+	else if((int)euler_angles.yaw > 175 && (int)euler_angles.yaw <= 180) {
+			//yaw_sign = NEGATIVE;
+		if(yaw_sign != POSITIVE && EKF.gyro[2] < 0) {
+			yaw_counter--;
+			yaw_sign = POSITIVE;
+		}
+	}
+
+	else if(jump_counter > 50) { //Approx 1 sec.
+		yaw_sign = NEUTRAL;
+		jump_counter = 0;
+	}
+
+	if(yaw_sign != NEUTRAL) {
+		jump_counter++;
+	}
+
+	yaw += yaw_counter*360;
+	euler_angles.yaw = yaw;
+
+	/*
+	switch(yaw_sign) {
+		case POSITIVE:
+			euler_angles.yaw += 360;
+			break;
+		case NEGATIVE:
+			euler_angles.yaw -=360;
+			break;
+	}
+*/
+	//euler_angles.yaw = (atan2((float) mag[1], (float) mag[0]) * 180 / M_PI);
+	//yaw = acos(yaw);
+	//euler_angles.pitch  = rad2deg*pitch;
 	//euler_angles.roll   = rad2deg*roll;
-	euler_angles.yaw    = rad2deg*yaw;
+	//euler_angles.yaw    = rad2deg*yaw;
 	return euler_angles;
 
 }
 
 float square(float x) {
-	float y = pow(x,2);
+	float y = x*x;
 	return y;
 }
 
@@ -1177,7 +1272,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  //float gyro[3];
 		  EKF.gyro[0] = gyroX;
 		  EKF.gyro[1] = -1*gyroY;
-		  EKF.gyro[2] = gyroZ;
+		  EKF.gyro[2] = -1*gyroZ;
 
 		  //İvmeölçer degerlerini oku
 
@@ -1185,18 +1280,16 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  accY = AccOku(ACC_Y_ADDR);
 		  accZ = AccOku(ACC_Z_ADDR);
 
-		  accXs = (float)accX* 0.0078;
-		  accYs = (float)accY* 0.0078;
-		  accZs = (float)accZ* 0.0078;
+		  accXc = (float)accX* 0.0078;
+		  accYc = (float)accY* 0.0078;
+		  accZc = (float)accZ* 0.0078;
 
 		  /*
 		  accXc = 0.815*accXs - 0.42592*accYs - 0.072464*accZs + 0.001334;
 		  accYc = 0.96009*accYs - 0.42592*accXs + 0.0091315*accZs + 0.042165;
 		  accZc = 0.0091315*accYs - 0.072464*accXs + 0.98549*accZs + 0.08443;
 		  */
-		  accXc = accXs;
-		  accYc = accYs;
-		  accZc = accZs;
+
 
 		  //float acc[3];
 		  EKF.acc[0] = accXc;// - AccXh;
@@ -1221,6 +1314,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 		  EKF.sonar_alt = sonar_alt;
 		  EKF.baro_alt = baro_alt;
+		  EKF.yaw_acc  = euler_angles.yaw;
 
 		  EKF.Run();
 
@@ -1275,15 +1369,6 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 		  //ie_roll_sat = controller.pid_roll.ie_roll_sat;
 
-		  w_ang = controller.pd_roll;
-
-
-		  w1 = controller_output[0];
-		  w2 = controller_output[1];
-		  w3 = controller_output[2];
-		  w4 = controller_output[3];
-
-
 		  PWMYaz();
 
 
@@ -1328,10 +1413,10 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 
 
 
-				state_des.angles[0] =  pid.pwm2ang(ch[0]);
-				state_des.angles[1] =  pid.pwm2ang(ch[1]);
+				state_des.angles[0] =  pwm2ang(ch[0]);
+				state_des.angles[1] =  pwm2ang(ch[1]);
 				state_des.angles[2] =  0;
-				state_des.rates[2] = pid.pwm2rate(ch[3]);
+				state_des.rates[2] = pwm2rate(ch[3]);
 
 				i++;
 				i = i % (CH_NUM+1);
