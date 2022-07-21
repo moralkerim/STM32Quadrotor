@@ -1025,23 +1025,24 @@ struct attitude DCM2Euler(int16_t acc[3], int16_t mag[3]) {
 	float DCM33 = -acc[2]/acctop;
 	//euler_angles.pitch = rad2deg*atan2(-DCM31,x);
 	float pitch = asin(-DCM31);
+	float cp = cos(pitch);
+
 	euler_angles.pitch = rad2deg*pitch;
 	//pitch = asin(pitch);
-	//float cp = cos(pitch);
 	euler_angles.roll = rad2deg*atan(DCM32/DCM33);
-	float yaw = rad2deg*atan2(DCM21,DCM11);
-	//euler_angles.yaw  = rad2deg*atan2(DCM21,DCM11);
-	if((int)euler_angles.yaw < -175 && (int)euler_angles.yaw >= -180) {
+	float yaw = rad2deg*atan2(DCM21/cp,DCM11/cp);
+	//-euler_angles.yaw  = rad2deg*atan2(DCM21,DCM11);
+	if((int)yaw < -175 && (int)yaw >= -180) {
 			//yaw_sign = POSITIVE;
-		if(yaw_sign != POSITIVE && EKF.gyro[2] > 0) {
+		if(yaw_sign != POSITIVE && -1*EKF.gyro[2] > 0) {
 			yaw_counter++;
 			yaw_sign = POSITIVE;
 		}
 
 	}
-	else if((int)euler_angles.yaw > 175 && (int)euler_angles.yaw <= 180) {
+	else if((int)yaw > 175 && (int)yaw <= 180) {
 			//yaw_sign = NEGATIVE;
-		if(yaw_sign != POSITIVE && EKF.gyro[2] < 0) {
+		if(yaw_sign != POSITIVE && -1*EKF.gyro[2] < 0) {
 			yaw_counter--;
 			yaw_sign = POSITIVE;
 		}
@@ -1272,7 +1273,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  //float gyro[3];
 		  EKF.gyro[0] = gyroX;
 		  EKF.gyro[1] = -1*gyroY;
-		  EKF.gyro[2] = -1*gyroZ;
+		  EKF.gyro[2] = gyroZ;
 
 		  //İvmeölçer degerlerini oku
 
@@ -1314,7 +1315,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 		  EKF.sonar_alt = sonar_alt;
 		  EKF.baro_alt = baro_alt;
-		  EKF.yaw_acc  = euler_angles.yaw;
+		  EKF.yaw_acc  = -1*euler_angles.yaw;
 
 		  EKF.Run();
 
