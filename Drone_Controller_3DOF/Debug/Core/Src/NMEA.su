@@ -1,0 +1,4 @@
+NMEA.c:30:7:getDataAt	136	static
+NMEA.c:50:5:decodeGGA	88	static
+NMEA.c:187:5:decodeRMC	80	static
+NMEA.c:260:6:getGPSData	224	static

@@ -16,10 +16,15 @@
 #define WIFI_SSID "Moral"
 #define WIFI_PASS "Jasperkid1213"
 
-
+//LAB
 //IPAddress server_ip(192, 168, 1, 41);
 //192.168.43.152
-IPAddress server_ip(192, 168, 43, 152);
+
+//Phone
+//IPAddress server_ip(192, 168, 43, 152);
+
+//Home
+IPAddress server_ip(192, 168, 1, 103);
 #define UDP_PORT 9000
 #define CS_PIN  D8
 #define SD_BUFFER_SIZE 1024

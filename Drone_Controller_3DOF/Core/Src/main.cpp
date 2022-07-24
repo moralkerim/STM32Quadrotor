@@ -29,8 +29,8 @@
 #include <main.hpp>
 #include "stdio.h"
 #include <string.h>
-#include <vector>
 #include <math.h>
+#include "coordinates.hpp"
 
 #include "Kalman.hpp"
 #include "Controller.hpp"
@@ -41,6 +41,8 @@ extern "C" {
 	#include "bmp180.h"
 	#include "gy-us42v2.h"
 	#include "HMC5883L.h"
+	#include "NMEA.h"
+
 }
 
 #include "Modes.h"
@@ -93,6 +95,7 @@ extern "C" {
 
 #define SONAR_CLOCK_RATE 80
 #define MAG_CLOCK_RATE   11
+#define GPS_CLOCK_RATE   160
 
 #define I2C_READ 0x01
 
@@ -121,13 +124,17 @@ TIM_HandleTypeDef htim4;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
+UART_HandleTypeDef huart3;
 DMA_HandleTypeDef hdma_usart1_rx;
 
 /* USER CODE BEGIN PV */
 float gyroX, gyroY, gyroZ, accX, accY, accZ;
 float accXc, accYc, accZc;
+float accXm, accYm, accZm;
 float GyroXh, GyroYh, GyroZh, AccXh, AccYh, AccZh;
 
+//float lla0[3] = {40.4343109, 29.1589451, 10};
+float lla0[3] = {40.4372482, 29.1656475, 10};
 
 struct state state_des;
 struct state state;
@@ -142,7 +149,6 @@ char buf[sizeof(telem_pack)];
 Kalman_Filtresi EKF;
 Controller controller;
 int controller_output[4];
-std::vector<float> controller_output_ang;
 
 bool Is_First_Captured;
 volatile int IC_Val2, IC_Val1, Diff, Diff_debug;
@@ -153,7 +159,7 @@ long int delay_timer, current_time, arm_timer, test_timer, disarm_timer, sent_ti
 bool delay_start, arm_start, armed, motor_start, disarm_start, sonar_ready;
 float baro_alt, sonar_alt, sonar_alt_, sonar_vel, sonar_vel_, sonar_acc, alt, alt_gnd, vz, baro_gnd;
 unsigned int sonar_range;
-unsigned short int controller_counter, sonar_counter, camera_counter, mag_counter;
+unsigned short int controller_counter, sonar_counter, camera_counter, mag_counter, gps_counter;
 bmp_t bmp;
 float z0;
 int ch_count;
@@ -175,6 +181,8 @@ sign yaw_sign = NEUTRAL;
 int8_t yaw_counter;
 uint16_t jump_counter;
 float yaw_prev;
+
+GPSSTRUCT gpsData;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -188,6 +196,7 @@ static void MX_USART2_UART_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_USART1_UART_Init(void);
+static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
 void MPU6050_Baslat(void);
 int16_t GyroOku (uint8_t addr);
@@ -268,7 +277,7 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM4_Init();
   MX_USART1_UART_Init();
-
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
 
   HAL_UART_Receive_DMA(&huart1, (uint8_t*)&cam_data, sizeof(cam_data));
@@ -276,6 +285,7 @@ int main(void)
   MPU6050_Baslat();
   bmp_init(&bmp);
   HMC5883L_initialize();
+  Ringbuf_init();
   //Gyro kalibrasyon hatalarını hesapla.
   HAL_Delay(2000);
   //EKF.roll_bias=GyroErr(GYRO_X_ADDR)/14.375; EKF.pitch_bias=-1*GyroErr(GYRO_Y_ADDR)/14.375;
@@ -701,6 +711,39 @@ static void MX_USART2_UART_Init(void)
 }
 
 /**
+  * @brief USART3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART3_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART3_Init 0 */
+
+  /* USER CODE END USART3_Init 0 */
+
+  /* USER CODE BEGIN USART3_Init 1 */
+
+  /* USER CODE END USART3_Init 1 */
+  huart3.Instance = USART3;
+  huart3.Init.BaudRate = 9600;
+  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.StopBits = UART_STOPBITS_1;
+  huart3.Init.Parity = UART_PARITY_NONE;
+  huart3.Init.Mode = UART_MODE_TX_RX;
+  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART3_Init 2 */
+
+  /* USER CODE END USART3_Init 2 */
+
+}
+
+/**
   * Enable DMA controller clock
   */
 static void MX_DMA_Init(void)
@@ -923,17 +966,17 @@ void TelemPack() {
 	  telem_pack.cam_data.z_cam = cam_data_20.z_cam;
 
 
-	  telem_pack.position_body.x = EKF.xpos;
-	  telem_pack.velocity_body.x = EKF.vx;
+	  telem_pack.position_body.x = EKF.x;
+	  telem_pack.velocity_body.x = EKF.v;
 	  //telem_pack.position_body.y = EKF.ypos;
 
 	  telem_pack.alt_thr = controller.alt_thr;
 
 	  telem_pack.time_millis = HAL_GetTick();
 
-	  telem_pack.acc.x = accX;
-	  telem_pack.acc.y = accY;
-	  telem_pack.acc.z = accZ;
+	  telem_pack.acc.x = accXm;
+	  telem_pack.acc.y = accYm;
+	  telem_pack.acc.z = accZm;
 
 	  telem_pack.mag.x = MAG_X_CALIB;
 	  telem_pack.mag.y = MAG_Y_CALIB;
@@ -1085,14 +1128,18 @@ float square(float x) {
 }
 
 void PWMYaz() {
+
+	/*
+  if(!motor_start) {
+			  MotorBaslat();
+			  motor_start = true;
+		  }
+*/
 	  if(armed) {
 
-		  if(!motor_start) {
-		  	  MotorBaslat();
-		  	  motor_start = true;
-		  }
 
-		  if(ch[EMERGENCY_CH-1] < 1500 && ch[3-1] > CH3_MIN) {
+
+		  if(ch[EMERGENCY_CH-1] < 1500 && ch[3-1] > CH3_MIN + 100) {
 
 
 			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,controller_output[0]);
@@ -1101,13 +1148,20 @@ void PWMYaz() {
 			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,controller_output[3]);
 		  }
 
-		  else if(motor_start) {
+		  else  {
 			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,1000);
 			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,1000);
 			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,1000);
 			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,1000);
 
 		  }
+	  }
+
+	  else {
+		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,1000);
+		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,1000);
+		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,1000);
+		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,1000);
 	  }
 
 
@@ -1167,6 +1221,37 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		controller_counter++;
 		camera_counter++;
 		mag_counter++;
+		gps_counter++;
+
+		if(gps_counter == GPS_CLOCK_RATE) {
+			gps_counter = 0;
+			getGPSData(&gpsData);
+			//if(gpsData.ggastruct.isfixValid) {
+				EKF.Qgps = 4e2 * gpsData.ggastruct.HDOP;
+
+			//}
+
+		//	else {
+				//EKF.Qgps = 1e9;
+			//}
+			float lla[3];
+			float ecef[3];
+			float ecef0[3];
+
+			lla[0] = gpsData.ggastruct.lcation.latitude;
+			lla[1] = gpsData.ggastruct.lcation.longitude;
+			lla[2] = gpsData.ggastruct.alt.altitude;
+
+			lla2ecef(lla, ecef);
+			lla2ecef(lla0, ecef0);
+
+			float vned[2];
+			ecef2ned(ecef, ecef0, lla0, vned);
+
+			EKF.xned = vned[0];
+			EKF.yned = vned[1];
+
+		}
 
 		if(mag_counter == MAG_CLOCK_RATE) {
 			mag_counter = 0;
@@ -1206,6 +1291,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 
 		else if (get_ucounter() == SONAR_CLOCK_RATE) {
+
 		  sonar_range = getRange();
 		  sonar_alt_ = sonar_alt;
 		  sonar_vel_ = sonar_vel;
@@ -1301,17 +1387,38 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		 // pitch_acc=asin(accY/acctop)*57.324;					//İvme ölçerden hesaplanan pitch açısı
 
 		  float g = 9.81;
+		  float roll_r  = deg2rad*EKF.state.angles[0];
+		  float pitch_r = deg2rad*EKF.state.angles[1];
+
+		  //Without * g
+		  float gx = cos(roll_r)*sin(pitch_r);
+		  float gy = -sin(roll_r);
+		  float gz = cos(roll_r)*cos(pitch_r);
+
+		  accXm = accXc*cos(pitch_r) + accZc*cos(roll_r)*sin(pitch_r) + accYc*sin(roll_r)*sin(pitch_r);
+		  accYm = accYc*cos(roll_r) - accZc*sin(roll_r);
+		  accZm = accZc*cos(roll_r)*cos(pitch_r) - accXc*sin(pitch_r) + accYc*cos(pitch_r)*sin(roll_r);
+
+		  accXm -= gx;
+		  accYm -= gy;
+		  accZm -= gz;
+
+		  accXm *= g; accYm *= g; accZm *= g;
+
 		  EKF.acc_vert = (accZc - 1.0)  * g;
 
+		  /*
 		  float ax_b = (accXc-AccXh);
 		  ax_b = ax_b - 1 * sin(deg2rad*EKF.state.angles[1]);
 		  ax_b = ax_b * cos(deg2rad*EKF.state.angles[1]);
 		  float accXm = ax_b  * g;
 		  float accYm = (accYc-AccYh)  * g;
+		  */
+
 
 		  EKF.accXm = accXm;// * deg2rad*EKF.state.angles[1];
 		  EKF.accYm = accYm;
-
+		  EKF.accx = accXm;
 
 		  EKF.sonar_alt = sonar_alt;
 		  EKF.baro_alt = baro_alt;
@@ -1358,7 +1465,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  controller.state_des = state_des;
 		  controller.ch3 = ch[2];
 
-		  controller_output_ang = controller.Run();
+		  controller.Run();
 
 		  controller_output[0] = controller.controller_output_pwm[0];
 		  controller_output[1] = controller.controller_output_pwm[1];

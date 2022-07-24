@@ -1,5 +1,8 @@
 "Core/Src/HMC5883L.o"
+"Core/Src/NMEA.o"
+"Core/Src/UartRingbuffer.o"
 "Core/Src/bmp180.o"
+"Core/Src/coordinates.o"
 "Core/Src/gy-us42v2.o"
 "Core/Src/main.o"
 "Core/Src/stm32f1xx_hal_msp.o"
