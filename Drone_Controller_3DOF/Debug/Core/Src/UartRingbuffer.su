@@ -11,6 +11,10 @@ UartRingbuffer.c:211:5:Uart_peek	4	static
 UartRingbuffer.c:229:5:Copy_upto	32	static
 UartRingbuffer.c:266:5:Get_after	32	static
 UartRingbuffer.c:283:14:GetTail	4	static
-UartRingbuffer.c:288:6:SetTail	16	static
-UartRingbuffer.c:292:5:Wait_for	24	static
-UartRingbuffer.c:348:6:Uart_isr	32	static
+UartRingbuffer.c:288:14:GetRxBuf	4	static
+UartRingbuffer.c:293:6:SetRxBuf	16	static
+UartRingbuffer.c:298:14:GetHead	4	static
+UartRingbuffer.c:303:6:SetTail	16	static
+UartRingbuffer.c:308:6:SetHead	16	static
+UartRingbuffer.c:313:5:Wait_for	24	static
+UartRingbuffer.c:369:6:Uart_isr	32	static

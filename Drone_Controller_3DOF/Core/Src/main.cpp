@@ -89,13 +89,14 @@ extern "C" {
 #define ACC_Y_ADDR 0x34
 #define ACC_Z_ADDR 0x36
 
-#define FULL_CLOCK 800
+#define FULL_CLOCK 200
 #define CNTRL_CLOCK 400
 #define SONAR_CLOCK 16
 
-#define SONAR_CLOCK_RATE 80
-#define MAG_CLOCK_RATE   11
-#define GPS_CLOCK_RATE   160
+#define SONAR_CLOCK_RATE 20
+#define MAG_CLOCK_RATE   4
+#define GPS_CLOCK_RATE   40
+#define CONTROLLER_RATE  1
 
 #define I2C_READ 0x01
 
@@ -133,8 +134,15 @@ float accXc, accYc, accZc;
 float accXm, accYm, accZm;
 float GyroXh, GyroYh, GyroZh, AccXh, AccYh, AccZh;
 
+//Office
 //float lla0[3] = {40.4343109, 29.1589451, 10};
-float lla0[3] = {40.4372482, 29.1656475, 10};
+
+//Zeytinlik
+//float lla0[3] = {40.4372482, 29.1656475, 10};
+
+//Home
+float lla0[3] = {40.4352608, 29.1620464, 39.7999992};
+
 
 struct state state_des;
 struct state state;
@@ -164,10 +172,12 @@ bmp_t bmp;
 float z0;
 int ch_count;
 
+long controller_timer, _controller_timer, controller_timer_dif;
+
 struct cam_data cam_data;
 struct cam_data cam_data_20;
 struct attitude euler_angles;
-
+unsigned long gga_time, gga_time_dif;
 int16_t MAG_X, MAG_Y, MAG_Z;
 int16_t MAG_X_CALIB, MAG_Y_CALIB, MAG_Z_CALIB;
 
@@ -214,6 +224,7 @@ void Check_Arm(void);
 void Check_Disarm(void);
 float square(float x);
 void MagCalib(int16_t MAG_X,int16_t MAG_Y,int16_t MAG_Z);
+void GPSInit();
 struct attitude DCM2Euler(int16_t acc[3], int16_t mag[3]);
 int _write(int32_t file, uint8_t *ptr, int32_t len);
 /* USER CODE END PFP */
@@ -285,6 +296,10 @@ int main(void)
   MPU6050_Baslat();
   bmp_init(&bmp);
   HMC5883L_initialize();
+  MotorBaslat();
+  GPSInit();
+  HAL_Delay(1000);
+
   Ringbuf_init();
   //Gyro kalibrasyon hatalarını hesapla.
   HAL_Delay(2000);
@@ -517,7 +532,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 72-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 1250;
+  htim2.Init.Period = 5000;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -966,7 +981,7 @@ void TelemPack() {
 	  telem_pack.cam_data.z_cam = cam_data_20.z_cam;
 
 
-	  telem_pack.position_body.x = EKF.x;
+	  telem_pack.position_body.x = EKF.xbody;
 	  telem_pack.velocity_body.x = EKF.v;
 	  //telem_pack.position_body.y = EKF.ypos;
 
@@ -1000,6 +1015,28 @@ int16_t GyroOku (uint8_t addr) {
 	HAL_I2C_Mem_Read(&hi2c1, (uint16_t)MPU6050 | I2C_READ, addr, 1, gyro_data, 2, 1);
 	int16_t gyro = gyro_data[0]<<8 | gyro_data[1];
 	return gyro;
+}
+
+void GPSInit() {
+	uint8_t Disable_GPGSV[11] = {0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x03, 0x00, 0xFD, 0x15};
+	HAL_UART_Transmit(&huart3, (uint8_t*)Disable_GPGSV, 11, 100);
+	uint8_t Set_to_5Hz[14] = {0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xC8, 0x00, 0x01, 0x00, 0x01, 0x00, 0xDE, 0x6A};
+	HAL_UART_Transmit(&huart3, (uint8_t*)Set_to_5Hz, 14, 100);
+	uint8_t Set_to_115[28] = {0xB5, 0x62, 0x06, 0x00, 0x14, 0x00, 0x01, 0x00, 0x00, 0x00, 0xD0, 0x08, 0x00, 0x00, 0x00, 0xC2, 0x01, 0x00, 0x07, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0, 0x7E};
+	HAL_UART_Transmit(&huart3, (uint8_t*)Set_to_115, 28, 100);
+
+
+    HAL_UART_Abort_IT(&huart3);
+
+    HAL_UART_DeInit(&huart3);
+
+    huart3.Init.BaudRate = 115200;
+
+    if (HAL_UART_Init(&huart3) != HAL_OK) {
+        Error_Handler();
+    }
+
+
 }
 
 float pwm2ang(unsigned short int pwm) {
@@ -1227,7 +1264,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 			gps_counter = 0;
 			getGPSData(&gpsData);
 			//if(gpsData.ggastruct.isfixValid) {
-				EKF.Qgps = 4e2 * gpsData.ggastruct.HDOP;
+				EKF.Qgps = 4 * gpsData.ggastruct.HDOP;
 
 			//}
 
@@ -1251,6 +1288,10 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 			EKF.xned = vned[0];
 			EKF.yned = vned[1];
 
+		}
+
+		else {
+			EKF.Qgps = 400 * gpsData.ggastruct.HDOP;
 		}
 
 		if(mag_counter == MAG_CLOCK_RATE) {
@@ -1342,7 +1383,10 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 		//}
 
-		if(controller_counter == 2) { //2.5 ms || 400 Hz
+		if(controller_counter == CONTROLLER_RATE) { //5 ms || 200 Hz
+			_controller_timer = controller_timer;
+			controller_timer = HAL_GetTick();
+			controller_timer_dif = controller_timer-_controller_timer;
 
 		  controller_counter = 0;
 
@@ -1390,22 +1434,29 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  float roll_r  = deg2rad*EKF.state.angles[0];
 		  float pitch_r = deg2rad*EKF.state.angles[1];
 
-		  //Without * g
-		  float gx = cos(roll_r)*sin(pitch_r);
-		  float gy = -sin(roll_r);
+		  //g body components, Without * g
+		  float gx = sin(pitch_r);
+		  float gy = cos(pitch_r)*sin(roll_r);
 		  float gz = cos(roll_r)*cos(pitch_r);
+/*
+		  accXm = accXc;
+		  accYm = accYc;
+		  accZm = accZc;
+*/
+		  accXc -= gx;
+		  accYc -= gy;
+		  accZc -= gz;
 
-		  accXm = accXc*cos(pitch_r) + accZc*cos(roll_r)*sin(pitch_r) + accYc*sin(roll_r)*sin(pitch_r);
+		  //Body to Local
+		  accXm = accXc*cos(pitch_r) - accZc*cos(roll_r)*sin(pitch_r) - accYc*sin(roll_r)*sin(pitch_r);
 		  accYm = accYc*cos(roll_r) - accZc*sin(roll_r);
-		  accZm = accZc*cos(roll_r)*cos(pitch_r) - accXc*sin(pitch_r) + accYc*cos(pitch_r)*sin(roll_r);
+		  accZm = accZc*cos(roll_r)*cos(pitch_r) + accXc*sin(pitch_r) + accYc*cos(pitch_r)*sin(roll_r);
 
-		  accXm -= gx;
-		  accYm -= gy;
-		  accZm -= gz;
 
 		  accXm *= g; accYm *= g; accZm *= g;
 
-		  EKF.acc_vert = (accZc - 1.0)  * g;
+		  //EKF.acc_vert = (accZc - 1.0)  * g;
+		  EKF.acc_vert = accZm;
 
 		  /*
 		  float ax_b = (accXc-AccXh);
@@ -1480,7 +1531,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  PWMYaz();
 
 
-		  HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_1);
+		  //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_1);
 		}
 		}
 	}

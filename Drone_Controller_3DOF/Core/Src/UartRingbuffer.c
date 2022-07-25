@@ -285,10 +285,31 @@ unsigned int GetTail () {
 
 }
 
+ring_buffer* GetRxBuf () {
+	return _rx_buffer;
+
+}
+
+void SetRxBuf(ring_buffer* buf) {
+	_rx_buffer = buf;
+}
+
+
+unsigned int GetHead () {
+	return _rx_buffer->head;
+
+}
+
 void SetTail (unsigned int _tail) {
 	_rx_buffer->tail = _tail;
 
 }
+
+void SetHead (unsigned int _head) {
+	_rx_buffer->head = _head;
+
+}
+
 int Wait_for (char *string)
 {
 	int so_far = 0;

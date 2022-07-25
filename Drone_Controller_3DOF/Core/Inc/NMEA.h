@@ -61,6 +61,9 @@ typedef struct {
 	RMCSTRUCT rmcstruct;
 }GPSSTRUCT;
 
+extern unsigned long gga_time;
+extern unsigned long gga_time_dif;
+
 char *getDataAt (char * str, const char * delim, int pos);
 
 int decodeGGA (char *GGAbuffer, GGASTRUCT *gga);
@@ -68,5 +71,8 @@ int decodeGGA (char *GGAbuffer, GGASTRUCT *gga);
 int decodeRMC (char *RMCbuffer, RMCSTRUCT *rmc);
 
 void getGPSData (GPSSTRUCT *gpsData);
+
+double pow2(long number, int power);
+//float pow(float number, int power);
 
 #endif /* INC_NMEA_H_ */

@@ -95,6 +95,10 @@ void Uart_isr (UART_HandleTypeDef *huart);
 
 unsigned int GetTail ();
 void SetTail (unsigned int _tail);
+void SetHead (unsigned int _tail);
+ring_buffer* GetRxBuf ();
+void SetRxBuf(ring_buffer* buf);
+unsigned int GetHead ();
 /*** Depreciated For now. This is not needed, try using other functions to meet the requirement ***/
 /* get the position of the given string within the incoming data.
  * It returns the position, where the string ends 

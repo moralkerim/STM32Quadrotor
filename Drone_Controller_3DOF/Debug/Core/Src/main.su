@@ -6,42 +6,43 @@ cmath:144:3:constexpr float std::atan2(float, float)	16	static
 cmath:184:3:constexpr float std::cos(float)	16	static
 cmath:425:3:constexpr float std::sin(float)	16	static
 cmath:463:3:constexpr float std::sqrt(float)	16	static
-main.cpp:224:5:int __io_putchar(int)	16	static
-main.cpp:231:6:void Delay(long int)	16	static
-main.cpp:246:5:int main()	8	static
-main.cpp:354:6:void SystemClock_Config()	72	static
-main.cpp:393:13:void MX_I2C1_Init()	8	static
-main.cpp:427:13:void MX_TIM1_Init()	80	static
-main.cpp:504:13:void MX_TIM2_Init()	32	static
-main.cpp:549:13:void MX_TIM3_Init()	48	static
-main.cpp:607:13:void MX_TIM4_Init()	32	static
-main.cpp:652:13:void MX_USART1_UART_Init()	8	static
-main.cpp:685:13:void MX_USART2_UART_Init()	8	static
-main.cpp:718:13:void MX_USART3_UART_Init()	8	static
-main.cpp:749:13:void MX_DMA_Init()	16	static
-main.cpp:767:13:void MX_GPIO_Init()	40	static
-main.cpp:810:6:void MPU6050_Baslat()	32	static
-main.cpp:830:6:void MagCalib(int16_t, int16_t, int16_t)	24	static
-main.cpp:841:6:void checkMode(int)	16	static
-main.cpp:862:6:void Check_Arm()	8	static
-main.cpp:894:6:void Check_Disarm()	8	static
-main.cpp:916:6:void TelemPack()	8	static
-main.cpp:987:6:void SendTelem()	16	static
-main.cpp:998:9:int16_t GyroOku(uint8_t)	40	static
-main.cpp:1005:7:float pwm2ang(short unsigned int)	40	static
-main.cpp:1030:7:float pwm2rate(short unsigned int)	32	static
-main.cpp:1046:9:int16_t AccOku(uint8_t)	40	static
+main.cpp:235:5:int __io_putchar(int)	16	static
+main.cpp:242:6:void Delay(long int)	16	static
+main.cpp:257:5:int main()	8	static
+main.cpp:369:6:void SystemClock_Config()	72	static
+main.cpp:408:13:void MX_I2C1_Init()	8	static
+main.cpp:442:13:void MX_TIM1_Init()	80	static
+main.cpp:519:13:void MX_TIM2_Init()	32	static
+main.cpp:564:13:void MX_TIM3_Init()	48	static
+main.cpp:622:13:void MX_TIM4_Init()	32	static
+main.cpp:667:13:void MX_USART1_UART_Init()	8	static
+main.cpp:700:13:void MX_USART2_UART_Init()	8	static
+main.cpp:733:13:void MX_USART3_UART_Init()	8	static
+main.cpp:764:13:void MX_DMA_Init()	16	static
+main.cpp:782:13:void MX_GPIO_Init()	40	static
+main.cpp:825:6:void MPU6050_Baslat()	32	static
+main.cpp:845:6:void MagCalib(int16_t, int16_t, int16_t)	24	static
+main.cpp:856:6:void checkMode(int)	16	static
+main.cpp:877:6:void Check_Arm()	8	static
+main.cpp:909:6:void Check_Disarm()	8	static
+main.cpp:931:6:void TelemPack()	8	static
+main.cpp:1002:6:void SendTelem()	16	static
+main.cpp:1013:9:int16_t GyroOku(uint8_t)	40	static
+main.cpp:1020:6:void GPSInit()	72	static
+main.cpp:1042:7:float pwm2ang(short unsigned int)	40	static
+main.cpp:1067:7:float pwm2rate(short unsigned int)	32	static
+main.cpp:1083:9:int16_t AccOku(uint8_t)	40	static
 cmath:475:5:constexpr typename __gnu_cxx::__enable_if<std::__is_integer<_Tp>::__value, double>::__type std::sqrt(_Tp) [with _Tp = int]	16	static
-main.cpp:1053:17:attitude DCM2Euler(int16_t*, int16_t*)	72	static
-main.cpp:1125:7:float square(float)	24	static
-main.cpp:1130:6:void PWMYaz()	4	static
-main.cpp:1172:7:float GyroErr(uint8_t)	24	static
-main.cpp:1183:7:float AccErr(uint8_t)	24	static
-main.cpp:1194:6:void MotorBaslat()	8	static
-main.cpp:1203:5:int _write(int32_t, uint8_t*, int32_t)	32	static
-main.cpp:1212:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	192	static
-main.cpp:1488:6:void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef*)	16	static
-main.cpp:1543:6:void Error_Handler()	4	static,ignoring_inline_asm
-main.cpp:1552:1:void __static_initialization_and_destruction_0(int, int)	16	static
-main.cpp:1552:1:cpp)	8	static
-main.cpp:1552:1:cpp)	8	static
+main.cpp:1090:17:attitude DCM2Euler(int16_t*, int16_t*)	72	static
+main.cpp:1162:7:float square(float)	24	static
+main.cpp:1167:6:void PWMYaz()	4	static
+main.cpp:1209:7:float GyroErr(uint8_t)	24	static
+main.cpp:1220:7:float AccErr(uint8_t)	24	static
+main.cpp:1231:6:void MotorBaslat()	8	static
+main.cpp:1240:5:int _write(int32_t, uint8_t*, int32_t)	32	static
+main.cpp:1249:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	192	static
+main.cpp:1539:6:void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef*)	16	static
+main.cpp:1594:6:void Error_Handler()	4	static,ignoring_inline_asm
+main.cpp:1603:1:void __static_initialization_and_destruction_0(int, int)	16	static
+main.cpp:1603:1:cpp)	8	static
+main.cpp:1603:1:cpp)	8	static
