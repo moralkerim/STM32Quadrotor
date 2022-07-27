@@ -63,6 +63,15 @@ class Telem(Enum):
       magX = 50
       magY = 51
       magZ = 52
+      lat = 53
+      lon = 54
+      alt_gps = 55
+      xned = 56
+      yned = 57
+      zned = 58
+      xbody_gps = 59
+      ybody_gps = 60
+      zbody_gps = 61
 
 exit = True      
 for telem in Telem:
@@ -121,7 +130,7 @@ def animate(i,data_enum):
         (data, addr) = mySocket.recvfrom(1024)
 
         empty_socket(mySocket)
-        data_org = struct.unpack('<ffffffffffffHHHHffffffffffffffffffffffffLBhhhhfffhhh', data)
+        data_org = struct.unpack('<ffffffffffffHHHHffffffffffffffffffffffffLBhhhhfffhhhfffffffff', data)
 
         data_enum.append(data_org[telem_value-1])  
         #pitch.append(data_org[1])

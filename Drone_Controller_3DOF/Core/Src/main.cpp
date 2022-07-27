@@ -967,8 +967,8 @@ void TelemPack() {
 	  telem_pack.ekf.roll_gyro  = EKF.gyro[0];
 	  telem_pack.ekf.pitch_gyro = EKF.gyro[1];
 
-	  telem_pack.ekf.roll_comp =  EKF.gyro[2];
-	  telem_pack.ekf.pitch_comp = EKF.ap;
+	  telem_pack.ekf.roll_comp =  EKF.roll_bias;
+	  telem_pack.ekf.pitch_comp = EKF.pitch_bias;
 
 	  telem_pack.ekf.roll_ekf =  EKF.roll_ekf;
 	  telem_pack.ekf.pitch_ekf = EKF.pitch_ekf;
@@ -993,21 +993,31 @@ void TelemPack() {
 	  telem_pack.cam_data.z_cam = cam_data_20.z_cam;
 
 
-	  telem_pack.position_body.x = EKF.xbody;
-	  telem_pack.velocity_body.x = EKF.v;
-	  //telem_pack.position_body.y = EKF.ypos;
+	  telem_pack.position_body.x = EKF.x;
+	  telem_pack.velocity_body.x = EKF.vx;
+	  telem_pack.position_body.y = EKF.y;
+	  telem_pack.velocity_body.y = EKF.vy;
 
 	  telem_pack.alt_thr = controller.alt_thr;
 
 	  telem_pack.time_millis = HAL_GetTick();
 
-	  telem_pack.acc.x = accXm;
-	  telem_pack.acc.y = accYm;
+	  telem_pack.acc.x = EKF.acc_pos_x;
+	  telem_pack.acc.y = EKF.acc_pos_y;
 	  telem_pack.acc.z = accZm;
 
 	  telem_pack.mag.x = MAG_X_CALIB;
 	  telem_pack.mag.y = MAG_Y_CALIB;
 	  telem_pack.mag.z = MAG_Z_CALIB;
+
+	  telem_pack.gps.lla.x = gpsData.ggastruct.lcation.latitude;
+	  telem_pack.gps.lla.y = gpsData.ggastruct.lcation.longitude;
+
+	  telem_pack.gps.pos_body.x = EKF.xbody;
+	  telem_pack.gps.pos_body.y = EKF.ybody;
+
+	  telem_pack.gps.pos_ned.x = EKF.xned;
+	  telem_pack.gps.pos_ned.y = EKF.yned;
 	  memcpy(buf,&telem_pack,sizeof(telem_pack));
 }
 
@@ -1299,6 +1309,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		if(gps_counter == GPS_CLOCK_RATE) {
 			gps_counter = 0;
 			getGPSData(&gpsData);
+			EKF.gps_fixed = gpsData.ggastruct.isfixValid;
 
 			if(!home && gpsData.ggastruct.isfixValid) {
 				SetHome();
@@ -1325,7 +1336,8 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 				EKF.v_ground = gpsData.rmcstruct.speed * 0.514444444; //Knot to m/s
 
 				float deg2rad = M_PI/180.0;
-				EKF.vgps = EKF.v_ground * cos(gpsData.rmcstruct.course * deg2rad);
+				EKF.vgpsx = EKF.v_ground * cos(gpsData.rmcstruct.course * deg2rad);
+				EKF.vgpsy = EKF.v_ground * sin(gpsData.rmcstruct.course * deg2rad);
 			}
 		}
 
@@ -1504,6 +1516,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  EKF.accXm = accXm;// * deg2rad*EKF.state.angles[1];
 		  EKF.accYm = accYm;
 		  EKF.acc_pos_x = accXm;
+		  EKF.acc_pos_y = -accYm;
 
 		  EKF.sonar_alt = sonar_alt;
 		  EKF.baro_alt = baro_alt;
@@ -1541,8 +1554,8 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 			checkMode(ch[MOD_CH-1]);
 
 			controller.z_vel = EKF.vz;
-			controller.vx	 = EKF.vx;
-			controller.x     = EKF.xpos;
+			//controller.vx	 = EKF.vx;
+			//controller.x     = EKF.xpos;
 			//controller.z0 = z0;
 			controller.z = EKF.alt_gnd;
 

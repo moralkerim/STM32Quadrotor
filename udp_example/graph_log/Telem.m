@@ -55,6 +55,15 @@ classdef Telem < uint32
       magX (  50 )
       magY (  51 )
       magZ (  52 )
+      lat ( 53 )
+      lon ( 54 )
+      alt_gps ( 55 )
+      xned ( 56 )
+      yned ( 57 )
+      zned ( 58 )
+      xbody_gps ( 59 )
+      ybody_gps ( 60 )
+      zbody_gps ( 61 )
    end
 end
 

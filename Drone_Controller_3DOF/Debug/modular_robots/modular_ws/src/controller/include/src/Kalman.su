@@ -3,12 +3,10 @@ cmath:184:3:constexpr float std::cos(float)	16	static
 cmath:425:3:constexpr float std::sin(float)	16	static
 cmath:463:3:constexpr float std::sqrt(float)	16	static
 Kalman.cpp:5:1:Kalman_Filtresi::Kalman_Filtresi()	32	static
-Kalman.cpp:8:6:void Kalman_Filtresi::PredictPos()	40	static
-Kalman.cpp:34:6:void Kalman_Filtresi::UpdatePos()	80	static
-Kalman.cpp:77:6:void Kalman_Filtresi::EKF_Pos()	16	static
-Kalman.cpp:106:6:void Kalman_Filtresi::EKF_Attitude(euler_angle)	152	static
-Kalman.cpp:327:6:void Kalman_Filtresi::EKF_Alt()	72	static
-Kalman.cpp:401:6:void Kalman_Filtresi::EKF_Cam()	48	static
-Kalman.cpp:435:6:void Kalman_Filtresi::NED2Body()	56	static
-Kalman.cpp:454:6:void Kalman_Filtresi::Run()	32	static
-Kalman.cpp:515:1:Kalman_Filtresi::~Kalman_Filtresi()	16	static
+Kalman.cpp:8:6:void Kalman_Filtresi::PredictUpdatePos(pos_axis)	168	static
+Kalman.cpp:184:6:void Kalman_Filtresi::EKF_Pos()	16	static
+Kalman.cpp:224:6:void Kalman_Filtresi::EKF_Attitude(euler_angle)	152	static
+Kalman.cpp:445:6:void Kalman_Filtresi::EKF_Alt()	72	static
+Kalman.cpp:554:6:void Kalman_Filtresi::NED2Body()	48	static
+Kalman.cpp:574:6:void Kalman_Filtresi::Run()	32	static
+Kalman.cpp:635:1:Kalman_Filtresi::~Kalman_Filtresi()	16	static

@@ -67,6 +67,12 @@ struct pwm {
 	unsigned short w4;
 }__attribute__ ((packed));
 
+struct gps {
+	struct position_body lla;
+	struct position_body pos_ned;
+	struct position_body pos_body;
+}__attribute__ ((packed));
+
 struct telem_pack {
   struct attitude attitude;
   struct attitude attitude_des;
@@ -84,4 +90,5 @@ struct telem_pack {
   struct cam_data cam_data;
   struct acc acc;
   struct mag mag;
+  struct gps gps;
 }__attribute__ ((packed));
