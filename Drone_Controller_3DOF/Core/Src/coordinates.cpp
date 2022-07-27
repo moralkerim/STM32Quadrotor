@@ -8,6 +8,7 @@
 
 void lla2ecef(float lla[3], float ecef[3]) {
 	float deg2rad = M_PI/180.0;
+
 	float lat = deg2rad*lla[0];
 	float lon = deg2rad*lla[1];
 	float h = lla[2];
@@ -23,12 +24,16 @@ void lla2ecef(float lla[3], float ecef[3]) {
 }
 
 void ecef2ned(float ecef[3], float ecef0[3], float lla0[3], float vned[2]) {
+	float deg2rad = M_PI/180.0;
+
+
 	float dxecef = ecef[0]- ecef0[0];
 	float dyecef = ecef[1]- ecef0[1];
 	float dzecef = ecef[2] -ecef0[2];
+	//dzecef = 0;
 
-	float lat0 = lla0[0];
-	float lon0 = lla0[1];
+	float lat0 = deg2rad*lla0[0];
+	float lon0 = deg2rad*lla0[1];
 
 	vned[1]=  -sin(lon0)*dxecef + cos(lon0)*dyecef;
 	vned[0] = -sin(lat0)*cos(lon0)*dxecef - sin(lat0)*sin(lon0)*dyecef + cos(lat0)*dzecef;

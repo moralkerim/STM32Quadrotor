@@ -58,6 +58,7 @@ extern volatile uint16_t timeout;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
+extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim3;
 extern DMA_HandleTypeDef hdma_usart1_rx;
@@ -90,6 +91,10 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
+	  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,1000);
+	  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,1000);
+	  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,1000);
+	  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,1000);
 
   /* USER CODE END HardFault_IRQn 0 */
   while (1)

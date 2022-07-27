@@ -1,5 +1,5 @@
 NMEA.c:30:7:getDataAt	232	static
 NMEA.c:43:8:pow2	48	static
 NMEA.c:83:5:decodeGGA	88	static
-NMEA.c:220:5:decodeRMC	64	static
+NMEA.c:220:5:decodeRMC	80	static
 NMEA.c:295:6:getGPSData	232	static

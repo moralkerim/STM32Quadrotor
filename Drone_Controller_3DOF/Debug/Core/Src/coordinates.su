@@ -1,4 +1,4 @@
 cmath:184:3:constexpr float std::cos(float)	16	static
 cmath:425:3:constexpr float std::sin(float)	16	static
 coordinates.cpp:9:6:void lla2ecef(float*, float*)	40	static
-coordinates.cpp:25:6:void ecef2ned(float*, float*, float*, float*)	56	static
+coordinates.cpp:26:6:void ecef2ned(float*, float*, float*, float*)	56	static

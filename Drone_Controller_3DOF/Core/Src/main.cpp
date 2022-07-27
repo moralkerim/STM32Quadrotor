@@ -1,8 +1,8 @@
 /* USER CODE BEGIN Header */
 /**
  * TO DO:
- * -Make Qa=0 when disarmed.
- * -Remove GyroXh from equations.
+ * -Increase sr rate.
+ * -Increase bias coeff.
   ******************************************************************************
   * @file           : main.c
   * @brief          : Main program body
@@ -129,6 +129,14 @@ UART_HandleTypeDef huart3;
 DMA_HandleTypeDef hdma_usart1_rx;
 
 /* USER CODE BEGIN PV */
+const float Sx = -0.0030;
+const float Sy = -0.0055;
+const float Sz =  -0.0254;
+
+const float bx = -0.4900;
+const float by = -1.1850+14;
+const float bz = 3.2050;
+
 float gyroX, gyroY, gyroZ, accX, accY, accZ;
 float accXc, accYc, accZc;
 float accXm, accYm, accZm;
@@ -141,8 +149,8 @@ float GyroXh, GyroYh, GyroZh, AccXh, AccYh, AccZh;
 //float lla0[3] = {40.4372482, 29.1656475, 10};
 
 //Home
-float lla0[3] = {40.4352608, 29.1620464, 39.7999992};
-
+//float lla0[3] = {40.4352608, 29.1620464, 39.7999992};
+float lla0[3], lla0_mean[3];
 
 struct state state_des;
 struct state state;
@@ -171,9 +179,10 @@ unsigned short int controller_counter, sonar_counter, camera_counter, mag_counte
 bmp_t bmp;
 float z0;
 int ch_count;
+bool home = false;
 
 long controller_timer, _controller_timer, controller_timer_dif;
-
+unsigned int home_counter;
 struct cam_data cam_data;
 struct cam_data cam_data_20;
 struct attitude euler_angles;
@@ -225,6 +234,7 @@ void Check_Disarm(void);
 float square(float x);
 void MagCalib(int16_t MAG_X,int16_t MAG_Y,int16_t MAG_Z);
 void GPSInit();
+void SetHome();
 struct attitude DCM2Euler(int16_t acc[3], int16_t mag[3]);
 int _write(int32_t file, uint8_t *ptr, int32_t len);
 /* USER CODE END PFP */
@@ -887,6 +897,7 @@ void Check_Arm() {
 					controller.pid_pitch.reset();
 					controller.pid_yaw.reset();
 					armed = true;
+					EKF.armed = true;
 					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
 					EKF.sb = 1e-3;
 
@@ -916,6 +927,7 @@ void Check_Disarm() {
 
 				if(HAL_GetTick() - disarm_timer > 3000) {
 					armed = false;
+					EKF.armed = false;
 					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
 
 				}
@@ -949,14 +961,14 @@ void TelemPack() {
 	  telem_pack.attitude_rate_des.roll =  state_des.rates[0];
 	  telem_pack.attitude_rate_des.pitch = state_des.rates[1];
 
-	  telem_pack.ekf.roll_acc  = euler_angles.roll;
-	  telem_pack.ekf.pitch_acc = euler_angles.pitch;
+	  telem_pack.ekf.roll_acc  = EKF.roll_acc;
+	  telem_pack.ekf.pitch_acc = EKF.pitch_acc;
 
 	  telem_pack.ekf.roll_gyro  = EKF.gyro[0];
 	  telem_pack.ekf.pitch_gyro = EKF.gyro[1];
 
 	  telem_pack.ekf.roll_comp =  EKF.gyro[2];
-	  telem_pack.ekf.pitch_comp = euler_angles.yaw;
+	  telem_pack.ekf.pitch_comp = EKF.ap;
 
 	  telem_pack.ekf.roll_ekf =  EKF.roll_ekf;
 	  telem_pack.ekf.pitch_ekf = EKF.pitch_ekf;
@@ -1049,8 +1061,8 @@ float pwm2ang(unsigned short int pwm) {
 	int in_min  = 1160;
 	int in_max  = 1850;
 	*/
-	int out_min = -15;
-	int out_max  = 15;
+	int out_min = -30;
+	int out_max  = 30;
 	unsigned short int pwm_out;
 
 	if(pwm > 1500 - dead_zone && pwm < 1500 + dead_zone) {
@@ -1246,6 +1258,30 @@ int _write(int32_t file, uint8_t *ptr, int32_t len) {
 	return len;
 }
 
+void SetHome() {
+	home_counter++;
+	if(home_counter != 11) {
+		lla0_mean[0]  += gpsData.ggastruct.lcation.latitude;
+		lla0_mean[1] += gpsData.ggastruct.lcation.longitude;
+		lla0_mean[2] += gpsData.ggastruct.alt.altitude;
+	}
+
+	else {
+		home_counter = 0;
+
+		lla0[0] = lla0_mean[0]/10;
+		lla0[1] = lla0_mean[1]/10;
+		lla0[2] = lla0_mean[2]/10;
+
+		lla0_mean[0] = 0;
+		lla0_mean[1] = 0;
+		lla0_mean[2] = 0;
+
+		home = true;
+	}
+
+}
+
 void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 	if(htim == &htim2) {
@@ -1263,36 +1299,39 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		if(gps_counter == GPS_CLOCK_RATE) {
 			gps_counter = 0;
 			getGPSData(&gpsData);
-			//if(gpsData.ggastruct.isfixValid) {
-				EKF.Qgps = 4 * gpsData.ggastruct.HDOP;
 
-			//}
+			if(!home && gpsData.ggastruct.isfixValid) {
+				SetHome();
+			}
 
-		//	else {
-				//EKF.Qgps = 1e9;
-			//}
-			float lla[3];
-			float ecef[3];
-			float ecef0[3];
+			if(home) {
 
-			lla[0] = gpsData.ggastruct.lcation.latitude;
-			lla[1] = gpsData.ggastruct.lcation.longitude;
-			lla[2] = gpsData.ggastruct.alt.altitude;
+				float lla[3];
+				float ecef[3];
+				float ecef0[3];
 
-			lla2ecef(lla, ecef);
-			lla2ecef(lla0, ecef0);
+				lla[0] = gpsData.ggastruct.lcation.latitude;
+				lla[1] = gpsData.ggastruct.lcation.longitude;
+				lla[2] = gpsData.ggastruct.alt.altitude;
 
-			float vned[2];
-			ecef2ned(ecef, ecef0, lla0, vned);
+				lla2ecef(lla, ecef);
+				lla2ecef(lla0, ecef0);
 
-			EKF.xned = vned[0];
-			EKF.yned = vned[1];
+				float vned[2];
+				ecef2ned(ecef, ecef0, lla0, vned);
 
+				EKF.xned = vned[0];
+				EKF.yned = vned[1];
+				EKF.v_ground = gpsData.rmcstruct.speed * 0.514444444; //Knot to m/s
+
+				float deg2rad = M_PI/180.0;
+				EKF.vgps = EKF.v_ground * cos(gpsData.rmcstruct.course * deg2rad);
+			}
 		}
 
-		else {
-			EKF.Qgps = 400 * gpsData.ggastruct.HDOP;
-		}
+		//else {
+		//	EKF.Qgps = 400 * gpsData.ggastruct.HDOP;
+		//}
 
 		if(mag_counter == MAG_CLOCK_RATE) {
 			mag_counter = 0;
@@ -1411,21 +1450,18 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  accY = AccOku(ACC_Y_ADDR);
 		  accZ = AccOku(ACC_Z_ADDR);
 
+		  accX = (1+Sx) * accX + bx;
+		  accY = (1+Sy) * accY + by;
+		  accZ = (1+Sz) * accZ + bz;
+
 		  accXc = (float)accX* 0.0078;
 		  accYc = (float)accY* 0.0078;
 		  accZc = (float)accZ* 0.0078;
 
-		  /*
-		  accXc = 0.815*accXs - 0.42592*accYs - 0.072464*accZs + 0.001334;
-		  accYc = 0.96009*accYs - 0.42592*accXs + 0.0091315*accZs + 0.042165;
-		  accZc = 0.0091315*accYs - 0.072464*accXs + 0.98549*accZs + 0.08443;
-		  */
-
-
 		  //float acc[3];
-		  EKF.acc[0] = accXc;// - AccXh;
-		  EKF.acc[1] = accYc;// - AccYh;
-		  EKF.acc[2] = accZc;// - AccZh;
+		  EKF.acc[0] = accX;// - AccXh;
+		  EKF.acc[1] = accY;// - AccYh;
+		  EKF.acc[2] = accZ;// - AccZh;
 
 		  //float acctop=sqrt(accX*accX+accY*accY+accZ*accZ);		//Toplam ivme
 		 // pitch_acc=asin(accY/acctop)*57.324;					//İvme ölçerden hesaplanan pitch açısı
@@ -1438,11 +1474,9 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  float gx = sin(pitch_r);
 		  float gy = cos(pitch_r)*sin(roll_r);
 		  float gz = cos(roll_r)*cos(pitch_r);
-/*
-		  accXm = accXc;
-		  accYm = accYc;
-		  accZm = accZc;
-*/
+
+
+
 		  accXc -= gx;
 		  accYc -= gy;
 		  accZc -= gz;
@@ -1469,7 +1503,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 		  EKF.accXm = accXm;// * deg2rad*EKF.state.angles[1];
 		  EKF.accYm = accYm;
-		  EKF.accx = accXm;
+		  EKF.acc_pos_x = accXm;
 
 		  EKF.sonar_alt = sonar_alt;
 		  EKF.baro_alt = baro_alt;

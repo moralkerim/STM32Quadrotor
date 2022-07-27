@@ -98,7 +98,7 @@ int decodeGGA (char *GGAbuffer, GGASTRUCT *gga) {
 
 	/*********************** Get TIME ***************************/
 	//(Update the GMT Offset at the top of this file)
-
+/*
 	memset(buffer, '\0', 12);
 	strcpy(buffer, getDataAt(GGAbuffer, ",", 0));
 
@@ -124,7 +124,7 @@ int decodeGGA (char *GGAbuffer, GGASTRUCT *gga) {
 	gga->tim.hour = hr;
 	gga->tim.min = min;
 	gga->tim.sec = atoi(buffer)%100;
-
+*/
 	/***************** Get LATITUDE  **********************/
 
 	memset(buffer, '\0', 12);
@@ -247,7 +247,7 @@ int decodeRMC (char *RMCbuffer, RMCSTRUCT *rmc) {
 	else rmc->speed = 0;
 
 	// Get Course
-/*
+
 	memset(buffer, '\0', 12);
 	strcpy(buffer, getDataAt(RMCbuffer, ",", 7));
 
@@ -269,7 +269,7 @@ int decodeRMC (char *RMCbuffer, RMCSTRUCT *rmc) {
 
 
 	// Get Date
-
+/*
 	memset(buffer, '\0', 12);
 	if (rmc->course == 0) strcpy(buffer, getDataAt(RMCbuffer, ",", 7));
 	else strcpy(buffer, getDataAt(RMCbuffer, ",", 8));
