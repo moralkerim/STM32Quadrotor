@@ -6,44 +6,45 @@ cmath:144:3:constexpr float std::atan2(float, float)	16	static
 cmath:184:3:constexpr float std::cos(float)	16	static
 cmath:425:3:constexpr float std::sin(float)	16	static
 cmath:463:3:constexpr float std::sqrt(float)	16	static
-main.cpp:245:5:int __io_putchar(int)	16	static
-main.cpp:252:6:void Delay(long int)	16	static
-main.cpp:267:5:int main()	8	static
-main.cpp:379:6:void SystemClock_Config()	72	static
-main.cpp:418:13:void MX_I2C1_Init()	8	static
-main.cpp:452:13:void MX_TIM1_Init()	80	static
-main.cpp:529:13:void MX_TIM2_Init()	32	static
-main.cpp:574:13:void MX_TIM3_Init()	48	static
-main.cpp:632:13:void MX_TIM4_Init()	32	static
-main.cpp:677:13:void MX_USART1_UART_Init()	8	static
-main.cpp:710:13:void MX_USART2_UART_Init()	8	static
-main.cpp:743:13:void MX_USART3_UART_Init()	8	static
-main.cpp:774:13:void MX_DMA_Init()	16	static
-main.cpp:792:13:void MX_GPIO_Init()	40	static
-main.cpp:835:6:void MPU6050_Baslat()	32	static
-main.cpp:855:6:void MagCalib(int16_t, int16_t, int16_t)	24	static
-main.cpp:866:6:void checkMode(int)	16	static
-main.cpp:887:6:void Check_Arm()	8	static
-main.cpp:920:6:void Check_Disarm()	8	static
-main.cpp:943:6:void TelemPack()	8	static
-main.cpp:1024:6:void SendTelem()	16	static
-main.cpp:1035:9:int16_t GyroOku(uint8_t)	40	static
-main.cpp:1042:6:void GPSInit()	72	static
-main.cpp:1064:7:float pwm2ang(short unsigned int)	40	static
-main.cpp:1089:7:float pwm2rate(short unsigned int)	32	static
-main.cpp:1105:9:int16_t AccOku(uint8_t)	40	static
+main.cpp:246:5:int __io_putchar(int)	16	static
+main.cpp:253:6:void Delay(long int)	16	static
+main.cpp:268:5:int main()	8	static
+main.cpp:380:6:void SystemClock_Config()	72	static
+main.cpp:419:13:void MX_I2C1_Init()	8	static
+main.cpp:453:13:void MX_TIM1_Init()	80	static
+main.cpp:530:13:void MX_TIM2_Init()	32	static
+main.cpp:575:13:void MX_TIM3_Init()	48	static
+main.cpp:633:13:void MX_TIM4_Init()	32	static
+main.cpp:678:13:void MX_USART1_UART_Init()	8	static
+main.cpp:711:13:void MX_USART2_UART_Init()	8	static
+main.cpp:744:13:void MX_USART3_UART_Init()	8	static
+main.cpp:775:13:void MX_DMA_Init()	16	static
+main.cpp:793:13:void MX_GPIO_Init()	40	static
+main.cpp:836:6:void MPU6050_Baslat()	32	static
+main.cpp:856:6:void MagCalib(int16_t, int16_t, int16_t)	24	static
+main.cpp:867:6:void checkMode(int)	16	static
+main.cpp:894:6:void Check_Arm()	8	static
+main.cpp:927:6:void Check_Disarm()	8	static
+main.cpp:950:6:void TelemPack()	8	static
+main.cpp:1036:6:void SendTelem()	16	static
+main.cpp:1047:9:int16_t GyroOku(uint8_t)	40	static
+main.cpp:1054:6:void GPSInit()	72	static
+main.cpp:1076:7:float pwm2ang(short unsigned int)	40	static
+main.cpp:1101:7:float pwm2rate(short unsigned int)	32	static
+main.cpp:1117:9:int16_t AccOku(uint8_t)	40	static
 cmath:475:5:constexpr typename __gnu_cxx::__enable_if<std::__is_integer<_Tp>::__value, double>::__type std::sqrt(_Tp) [with _Tp = int]	16	static
-main.cpp:1112:17:attitude DCM2Euler(int16_t*, int16_t*)	72	static
-main.cpp:1184:7:float square(float)	24	static
-main.cpp:1189:6:void PWMYaz()	4	static
-main.cpp:1231:7:float GyroErr(uint8_t)	24	static
-main.cpp:1242:7:float AccErr(uint8_t)	24	static
-main.cpp:1253:6:void MotorBaslat()	8	static
-main.cpp:1262:5:int _write(int32_t, uint8_t*, int32_t)	32	static
-main.cpp:1271:6:void SetHome()	8	static
-main.cpp:1295:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	200	static
-main.cpp:1586:6:void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef*)	16	static
-main.cpp:1641:6:void Error_Handler()	4	static,ignoring_inline_asm
-main.cpp:1650:1:void __static_initialization_and_destruction_0(int, int)	16	static
-main.cpp:1650:1:cpp)	8	static
-main.cpp:1650:1:cpp)	8	static
+main.cpp:1124:17:attitude DCM2Euler(int16_t*, int16_t*)	72	static
+main.cpp:1196:7:float square(float)	24	static
+main.cpp:1201:6:void PWMYaz()	4	static
+main.cpp:1243:7:float GyroErr(uint8_t)	24	static
+main.cpp:1254:7:float AccErr(uint8_t)	24	static
+main.cpp:1265:6:void MotorBaslat()	8	static
+main.cpp:1274:5:int _write(int32_t, uint8_t*, int32_t)	32	static
+main.cpp:1283:6:void SetHome()	8	static
+main.cpp:1307:6:void SetHome2()	4	static
+main.cpp:1315:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	200	static
+main.cpp:1610:6:void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef*)	16	static
+main.cpp:1665:6:void Error_Handler()	4	static,ignoring_inline_asm
+main.cpp:1674:1:void __static_initialization_and_destruction_0(int, int)	16	static
+main.cpp:1674:1:cpp)	8	static
+main.cpp:1674:1:cpp)	8	static

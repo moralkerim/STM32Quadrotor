@@ -1,8 +1,8 @@
 /* USER CODE BEGIN Header */
 /**
  * TO DO:
- * -Increase sr rate.
- * -Increase bias coeff.
+ * -Log gps velocity
+ * -Decrease position controller rate
   ******************************************************************************
   * @file           : main.c
   * @brief          : Main program body
@@ -235,6 +235,7 @@ float square(float x);
 void MagCalib(int16_t MAG_X,int16_t MAG_Y,int16_t MAG_Z);
 void GPSInit();
 void SetHome();
+void SetHome2();
 struct attitude DCM2Euler(int16_t acc[3], int16_t mag[3]);
 int _write(int32_t file, uint8_t *ptr, int32_t len);
 /* USER CODE END PFP */
@@ -868,18 +869,24 @@ void checkMode(int mod_ch) {
 
 		  controller.mod = STABILIZE;
 		  controller.z0 = EKF.alt_gnd;
+		  controller.x0 = EKF.x;
+		  controller.y0 = EKF.y;
 		  controller.p_alt.reset();
+		  controller.p_velx.reset();
+		  controller.p_vely.reset();
 	  }
 
 	  else if (mod_ch >=1400 && mod_ch <1700) {
 		  //Run (struct state state, struct state state_des, float z_vel, float z0, float z, float ch3),
+		 // controller.mod = LOITER;
 		  controller.mod = ALT_HOLD;
 
-		  //z0 = controller.p_alt.zi;
+		  z0 = controller.p_alt.zi;
 
 	  }
 
 	  else {
+		  //controller.mod = LOITER;
 		  controller.mod = ALT_HOLD;
 	  }
 }
@@ -898,8 +905,8 @@ void Check_Arm() {
 					controller.pid_yaw.reset();
 					armed = true;
 					EKF.armed = true;
+					SetHome2();
 					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
-					EKF.sb = 1e-3;
 
 					/*
 					controller.pid_roll.angle0   = EKF.state.angles[0];
@@ -1018,6 +1025,11 @@ void TelemPack() {
 
 	  telem_pack.gps.pos_ned.x = EKF.xned;
 	  telem_pack.gps.pos_ned.y = EKF.yned;
+
+	  telem_pack.gps.vel_body.x = EKF.vgpsx;
+	  telem_pack.gps.vel_body.y = EKF.vgpsy;
+
+
 	  memcpy(buf,&telem_pack,sizeof(telem_pack));
 }
 
@@ -1071,8 +1083,8 @@ float pwm2ang(unsigned short int pwm) {
 	int in_min  = 1160;
 	int in_max  = 1850;
 	*/
-	int out_min = -30;
-	int out_max  = 30;
+	int out_min = -20;
+	int out_max  = 20;
 	unsigned short int pwm_out;
 
 	if(pwm > 1500 - dead_zone && pwm < 1500 + dead_zone) {
@@ -1292,6 +1304,14 @@ void SetHome() {
 
 }
 
+void SetHome2() {
+		lla0[0] = gpsData.ggastruct.lcation.latitude;
+		lla0[1] = gpsData.ggastruct.lcation.longitude;
+		lla0[2] = gpsData.ggastruct.alt.altitude;
+
+		home = true;
+}
+
 void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 	if(htim == &htim2) {
@@ -1336,8 +1356,8 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 				EKF.v_ground = gpsData.rmcstruct.speed * 0.514444444; //Knot to m/s
 
 				float deg2rad = M_PI/180.0;
-				EKF.vgpsx = EKF.v_ground * cos(gpsData.rmcstruct.course * deg2rad);
-				EKF.vgpsy = EKF.v_ground * sin(gpsData.rmcstruct.course * deg2rad);
+				EKF.vgpsxned = EKF.v_ground * cos(gpsData.rmcstruct.course * deg2rad);
+				EKF.vgpsyned = EKF.v_ground * sin(gpsData.rmcstruct.course * deg2rad);
 			}
 		}
 
@@ -1554,15 +1574,19 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 			checkMode(ch[MOD_CH-1]);
 
 			controller.z_vel = EKF.vz;
-			//controller.vx	 = EKF.vx;
-			//controller.x     = EKF.xpos;
-			//controller.z0 = z0;
 			controller.z = EKF.alt_gnd;
+
+			controller.vx	 = EKF.vx;
+			controller.x     = EKF.x;
+
+			controller.vy	 = EKF.vy;
+			controller.y     = EKF.y;
 
 		  controller.state = state;
 		  controller.state_des = state_des;
 		  controller.ch3 = ch[2];
-
+		  controller.ch2 = ch[1];
+		  controller.ch1 = ch[0];
 		  controller.Run();
 
 		  controller_output[0] = controller.controller_output_pwm[0];

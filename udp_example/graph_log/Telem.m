@@ -64,6 +64,9 @@ classdef Telem < uint32
       xbody_gps ( 59 )
       ybody_gps ( 60 )
       zbody_gps ( 61 )
+      vxbody_gps ( 62 )
+      vybody_gps ( 63 )
+      vzbody_gps ( 64 )
    end
 end
 

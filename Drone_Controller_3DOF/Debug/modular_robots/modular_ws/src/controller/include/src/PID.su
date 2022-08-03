@@ -6,14 +6,15 @@ PID.cpp:15:7:float PID::P_Sqrt(float, float, float)	40	static
 PID.cpp:25:7:float PID::PI_Vel(float, float, float, float, float, unsigned int)	48	static
 PID.cpp:56:7:float PID::RateFF(float)	32	static
 PID.cpp:62:7:float PID::PID_Rate2(float, float, float, float, float, float, float)	40	static
-PID.cpp:96:7:float PID::PD_Rate(float, float, float, float, float)	40	static
-PID.cpp:129:6:void PID::reset()	16	static
-PID.cpp:137:7:float PID::P_Rate_Yaw(float, float, float)	32	static
-PID.cpp:147:9:uint8_t PID::sgn(float)	16	static
-PID.cpp:153:8:float PID::Sat(float, int, int, int)	32	static
-PID.cpp:178:8:float PID::Sat(float, int, int)	32	static
-PID.cpp:199:7:float PID::pwm2ang(short unsigned int)	40	static
-PID.cpp:224:7:float PID::pwm2rate(short unsigned int)	32	static
-PID.cpp:240:7:float PID::pwm2mot(short unsigned int, int)	48	static
-PID.cpp:249:14:unsigned int PID::F2thr(float)	40	static
-PID.cpp:259:1:PID::~PID()	16	static
+PID.cpp:96:7:float PID::PID_Pos(float, float, float, float, float)	40	static
+PID.cpp:119:7:float PID::PD_Rate(float, float, float, float, float)	40	static
+PID.cpp:152:6:void PID::reset()	16	static
+PID.cpp:160:7:float PID::P_Rate_Yaw(float, float, float)	32	static
+PID.cpp:170:9:uint8_t PID::sgn(float)	16	static
+PID.cpp:176:8:float PID::Sat(float, int, int, int)	32	static
+PID.cpp:201:8:float PID::Sat(float, int, int)	32	static
+PID.cpp:222:7:float PID::pwm2ang(short unsigned int)	40	static
+PID.cpp:247:7:float PID::pwm2rate(short unsigned int)	32	static
+PID.cpp:263:7:float PID::pwm2mot(short unsigned int, int)	48	static
+PID.cpp:272:14:unsigned int PID::F2thr(float)	40	static
+PID.cpp:282:1:PID::~PID()	16	static

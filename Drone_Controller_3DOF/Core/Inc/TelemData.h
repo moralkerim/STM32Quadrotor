@@ -71,6 +71,7 @@ struct gps {
 	struct position_body lla;
 	struct position_body pos_ned;
 	struct position_body pos_body;
+	struct position_body vel_body;
 }__attribute__ ((packed));
 
 struct telem_pack {

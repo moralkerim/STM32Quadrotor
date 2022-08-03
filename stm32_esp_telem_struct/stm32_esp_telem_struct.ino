@@ -7,21 +7,22 @@
 //#include <SoftwareSerial.h>
 #include "TelemData.h"
 
-/*
+
 #define WIFI_SSID "UAV"
 #define WIFI_PASS "A9A997B60FE11"
-*/
 
 
+/*
 #define WIFI_SSID "Moral"
 #define WIFI_PASS "Jasperkid1213"
+*/
 
 //LAB
-//IPAddress server_ip(192, 168, 1, 41);
+IPAddress server_ip(192, 168, 1, 41);
 //192.168.43.152
 
 //Phone
-IPAddress server_ip(192, 168, 43, 152);
+//IPAddress server_ip(192, 168, 43, 152);
 
 //Home
 //IPAddress server_ip(192, 168, 1, 103);
