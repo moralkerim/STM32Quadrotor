@@ -74,6 +74,18 @@ struct gps {
 	struct position_body vel_body;
 }__attribute__ ((packed));
 
+struct ch {
+	uint16_t ch1;
+	uint16_t ch2;
+	uint16_t ch3;
+	uint16_t ch4;
+	uint16_t ch5;
+	uint16_t ch6;
+	uint16_t ch7;
+	uint16_t ch8;
+	uint16_t ch9;
+}__attribute__ ((packed));
+
 struct telem_pack {
   struct attitude attitude;
   struct attitude attitude_des;
@@ -92,4 +104,5 @@ struct telem_pack {
   struct acc acc;
   struct mag mag;
   struct gps gps;
+  struct ch ch;
 }__attribute__ ((packed));

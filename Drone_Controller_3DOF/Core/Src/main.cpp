@@ -75,6 +75,8 @@ extern "C" {
 #define ACC_Z_ADDR 0x3F
 */
 
+#define UAV2
+
 #define MPU6050 (0x68<<1)
 #define MPU6050_POW_REG 0x3e
 #define MPU6050_DLPF_REG 0x1a
@@ -127,6 +129,7 @@ UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
 DMA_HandleTypeDef hdma_usart1_rx;
+DMA_HandleTypeDef hdma_usart2_rx;
 
 /* USER CODE BEGIN PV */
 const float Sx = -0.0030;
@@ -189,6 +192,12 @@ struct attitude euler_angles;
 unsigned long gga_time, gga_time_dif;
 int16_t MAG_X, MAG_Y, MAG_Z;
 int16_t MAG_X_CALIB, MAG_Y_CALIB, MAG_Z_CALIB;
+
+uint16_t roll_des_wifi;
+char roll_des_buf[sizeof(uint16_t)];
+
+struct ch ch_rcv;
+char ch_rcv_buf[sizeof(ch)];
 
 typedef enum {
 	POSITIVE,
@@ -296,13 +305,17 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM1_Init();
   MX_USART2_UART_Init();
+
+#ifdef UAV1
   MX_TIM3_Init();
+#endif
   MX_TIM4_Init();
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
 
   HAL_UART_Receive_DMA(&huart1, (uint8_t*)&cam_data, sizeof(cam_data));
+  HAL_UART_Receive_DMA(&huart2, (uint8_t*)ch_rcv_buf, sizeof(ch_rcv_buf));
   //HAL_UART_Receive_DMA(&huart1, rx_buffer, sizeof(cam_data)-1);
   MPU6050_Baslat();
   bmp_init(&bmp);
@@ -361,9 +374,7 @@ int main(void)
 
   while (1)
   {
-	  SendTelem();
-	  Check_Arm();
-	  Check_Disarm();
+
 
 
     /* USER CODE END WHILE */
@@ -782,6 +793,9 @@ static void MX_DMA_Init(void)
   /* DMA1_Channel5_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel5_IRQn);
+  /* DMA1_Channel6_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
 
 }
 
@@ -852,6 +866,33 @@ void MPU6050_Baslat(void) {
 
 
 }
+
+#ifdef UAV2
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+
+	if(huart == &huart2) {
+		memcpy(&ch_rcv,ch_rcv_buf,sizeof(ch_rcv));
+		ch[0] = ch_rcv.ch1;
+		ch[1] = ch_rcv.ch2;
+		ch[2] = ch_rcv.ch3;
+		ch[3] = ch_rcv.ch4;
+		ch[4] = ch_rcv.ch5;
+		ch[5] = ch_rcv.ch6;
+		ch[6] = ch_rcv.ch7;
+		ch[7] = ch_rcv.ch8;
+		ch[8] = ch_rcv.ch9;
+
+		for(int i=0; i<=sizeof(ch_rcv); i++ ) {
+			ch_rcv_buf[i] = '\0';
+		}
+
+		HAL_UART_Receive_DMA(&huart2, (uint8_t*)ch_rcv_buf, sizeof(ch_rcv_buf));
+
+	}
+}
+
+#endif
 
 void MagCalib(int16_t MAG_X,int16_t MAG_Y,int16_t MAG_Z) {
 	/*
@@ -1029,6 +1070,15 @@ void TelemPack() {
 	  telem_pack.gps.vel_body.x = EKF.vgpsx;
 	  telem_pack.gps.vel_body.y = EKF.vgpsy;
 
+	  telem_pack.ch.ch1 = (uint16_t)ch[0];
+	  telem_pack.ch.ch2 = (uint16_t)ch[1];
+	  telem_pack.ch.ch3 = (uint16_t)ch[2];
+	  telem_pack.ch.ch4 = (uint16_t)ch[3];
+	  telem_pack.ch.ch5 = (uint16_t)ch[4];
+	  telem_pack.ch.ch6 = (uint16_t)ch[5];
+	  telem_pack.ch.ch7 = (uint16_t)ch[6];
+	  telem_pack.ch.ch8 = (uint16_t)ch[7];
+	  telem_pack.ch.ch9 = (uint16_t)ch[8];
 
 	  memcpy(buf,&telem_pack,sizeof(telem_pack));
 }
@@ -1316,7 +1366,8 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 	if(htim == &htim2) {
 		//1.25 ms || 800 Hz
-
+		  Check_Arm();
+		  Check_Disarm();
 
 		set_ucounter(SONAR_CLOCK_RATE);
 		set_b_counter(12);
@@ -1599,7 +1650,9 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 		  //ie_roll_sat = controller.pid_roll.ie_roll_sat;
 
+
 		  PWMYaz();
+		  SendTelem();
 
 
 		  //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_1);

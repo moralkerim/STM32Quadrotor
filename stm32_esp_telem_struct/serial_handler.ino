@@ -34,7 +34,7 @@ void ToggleLED_1s() {
 
 void clear_buffer (unsigned int chunkSize)
 {
-  memcpy(log_buf, log_buf+chunkSize, sizeof(log_buf)-chunkSize);
+  memcpy(log_buf, log_buf + chunkSize, sizeof(log_buf) - chunkSize);
 }
 
 void serialEvent() {
@@ -79,38 +79,36 @@ void serialEvent() {
 
 }
 
-void writeSD() {
-  
-
-      if (dataFile) {
-        unsigned int chunkSize = dataFile.availableForWrite();
-
-        // if(millis() - sd_send_time > 100) {
-        //   sd_send_time = millis();
-        if (chunkSize && offset_log >= chunkSize) {
-          ToggleLED();
-          //dataFile.print(telem.attitude.pitch);   dataFile.print("||");  dataFile.println(millis());
-          unsigned int log_buf_size = offset_log - sizeof(struct telem_pack);
-          dataFile.write(log_buf, chunkSize);
-          offset_log = 0;
-          clear_buffer(chunkSize);
-
-        }
-      }
-
-      // }
-
-}
 
 
 void sendUDP() {
-//  if (millis() - udp_time > 20) {
-//    udp_time = millis();
-    ToggleLED();
+  //  if (millis() - udp_time > 20) {
+  //    udp_time = millis();
+  ToggleLED();
+  /*
     UDP.beginPacket(server_ip, UDP_PORT);
     UDP.write(buf, sizeof(struct telem_pack));
     UDP.endPacket();
+  */
 
-//  }
+  /*
+    String roll_string = String(telem.time_millis);
+    char buf[50];
+    roll_string.toCharArray(buf, roll_string.length());
+  */
+#ifdef UAV1
+  char send_buf[sizeof(struct ch)];
+  memcpy(send_buf, &telem.ch.ch1, sizeof(struct ch));
+
+  client.publish(topic, send_buf);
+
+  char deb_buf[10];
+
+  itoa (telem.ch.ch1, deb_buf, 10 );
+  client.publish(topic_deb, deb_buf);
+  
+#endif
+
+  //  }
   //
 }
