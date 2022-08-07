@@ -109,7 +109,7 @@ extern "C" {
 	#define PWM_LOWER 1050
 #endif
 
-#define CH_NUM 8
+#define CH_NUM 10
 #define CH0 5000
 #define EMERGENCY_CH 5
 //#define EMERGENCY_CH 5
