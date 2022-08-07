@@ -9,7 +9,9 @@
 void SwitchMag(int ch_state);
 
 void SwitchMag(int ch_state) {
-
+	
+	char state;
+	
 	// determine which state is the switch on
 	if		(ch_state > 750  && ch_state < 1250) state = 0;
 	else if (ch_state > 1250 && ch_state < 1750) state = 1;
