@@ -75,6 +75,19 @@ class Telem(Enum):
       vxbody_gps = 62
       vybody_gps = 63
       vzbody_gps = 64
+      ch1 = 65
+      ch2 = 66
+      ch3 = 67
+      ch4 = 68
+      ch5 = 69
+      ch6 = 70
+      ch7 = 71
+      ch9 = 72
+      ch8 = 73
+      pwm2_1 = 74
+      pwm2_2 = 75
+      pwm2_3 = 76
+      pwm2_4 = 77
 
 exit = True      
 for telem in Telem:
@@ -90,7 +103,12 @@ now = datetime.now()
 dt_string = now.strftime("%d.%m.%Y.%H.%M.%S")
 print("date and time =", dt_string)	
 
-port = 9000  # haberleşilen port adresi
+
+if(int(sys.argv[4]) == 1):
+    port = 9000  # haberleşilen port adresi
+    
+else:
+    port = 9001
 ip = ''
 mySocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 #mySocket.setblocking(False)
@@ -133,7 +151,7 @@ def animate(i,data_enum):
         (data, addr) = mySocket.recvfrom(1024)
 
         empty_socket(mySocket)
-        data_org = struct.unpack('<ffffffffffffHHHHffffffffffffffffffffffffLBhhhhfffhhhffffffffffff', data)
+        data_org = struct.unpack('<ffffffffffffHHHHffffffffffffffffffffffffLBhhhhfffhhhffffffffffffHHHHHHHHHHHHH', data)
 
         data_enum.append(data_org[telem_value-1])  
         #pitch.append(data_org[1])
