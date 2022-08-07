@@ -27,7 +27,15 @@ IPAddress server_ip(192, 168, 1, 41);
 
 //Home
 //IPAddress server_ip(192, 168, 1, 103);
-#define UDP_PORT 9000
+
+#ifdef UAV1
+  #define UDP_PORT 9000
+#endif
+
+#ifdef UAV2
+  #define UDP_PORT 9001
+#endif
+
 #define CS_PIN  D8
 #define SD_BUFFER_SIZE 1024
 
@@ -41,6 +49,7 @@ struct telem_pack telem;
 
 char test_buf[sizeof(telem)];
 char buf[sizeof(struct telem_pack)];
+char buf2send[sizeof(struct telem_pack)];
 char log_buf[SD_BUFFER_SIZE];
 int char_index;
 bool led_state, armed = true;
@@ -53,7 +62,7 @@ size_t offset_log;
 
 //MQTT
 const char *mqtt_broker = "192.168.1.41"; // Enter your WiFi or Ethernet IP
-const char *topic = "ch";
+const char *topic_ch = "ch";
 const char *topic_deb = "debug";
 const int mqtt_port = 1883;
 WiFiClient espClient;
@@ -92,7 +101,7 @@ void setup() {
 
     if (client.connect(client_id.c_str())) {
 #ifdef UAV2
-      client.subscribe(topic);
+      client.subscribe(topic_ch);
 #endif
 
       //Serial.println("Public emqx mqtt broker connected");
@@ -146,19 +155,12 @@ void callback(char *topic, uint8_t *payload, unsigned int length) {
   //Serial.println();
   //Serial.println(rec_buf);
   //float roll_des = atof(rec_buf);
-  char send_buf[sizeof(struct ch)];
-  char ch1_buf[sizeof(uint16_t)];
-  struct ch ch_deb;
-  
-  memcpy(send_buf, rec_buf, sizeof(struct ch));
-  memcpy(&ch_deb, send_buf, sizeof(struct ch));
+  char send_buf[sizeof(struct pwm)];
 
-  Serial.write(send_buf, sizeof(struct ch));
-  char deb_buf[10];
+  memcpy(send_buf, rec_buf, sizeof(struct pwm));
 
-  itoa (ch_deb.ch1, deb_buf, 10 );
-  memcpy(ch1_buf, &telem.ch.ch1, sizeof(uint16_t));
-  client.publish(topic_deb, deb_buf);
+  Serial.write(send_buf, sizeof(struct pwm));
+
   //Serial.println(ch_deb.ch1);
   //Serial.write(ch1_buf, sizeof(uint16_t));
 

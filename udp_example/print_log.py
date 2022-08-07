@@ -11,7 +11,12 @@ now = datetime.now()
 dt_string = now.strftime("%d.%m.%Y.%H.%M.%S")
 print("date and time =", dt_string)	
 
-port = 9000  # haberleşilen port adresi
+if(int(sys.argv[1]) == 1):
+    port = 9000  # haberleşilen port adresi
+    
+else:
+    port = 9001
+    
 ip = ''
 mySocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 mySocket.bind((ip, port))
@@ -21,7 +26,7 @@ mySocket.bind((ip, port))
 
 while True:
     (data, addr) = mySocket.recvfrom(1024)
-    data_org = struct.unpack('<ffffffffffffHHHHffffffffffffffffffffffffLBhhhhfffhhhffffffffffff', data)
+    data_org = struct.unpack('<ffffffffffffHHHHffffffffffffffffffffffffLBhhhhfffhhhffffffffffffHHHHHHHHHHHHH', data)
     with open(dt_string + '.txt', "a") as file:
         file.write("\n")
         file.write(str(data_org))

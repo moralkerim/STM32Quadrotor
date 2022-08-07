@@ -105,4 +105,6 @@ struct telem_pack {
   struct mag mag;
   struct gps gps;
   struct ch ch;
+  struct pwm pwm2;
+
 }__attribute__ ((packed));

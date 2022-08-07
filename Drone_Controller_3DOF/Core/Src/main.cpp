@@ -75,7 +75,7 @@ extern "C" {
 #define ACC_Z_ADDR 0x3F
 */
 
-#define UAV2
+#define UAV1
 
 #define MPU6050 (0x68<<1)
 #define MPU6050_POW_REG 0x3e
@@ -168,6 +168,7 @@ char buf[sizeof(telem_pack)];
 Kalman_Filtresi EKF;
 Controller controller;
 int controller_output[4];
+int controller_output_2[4];
 
 bool Is_First_Captured;
 volatile int IC_Val2, IC_Val1, Diff, Diff_debug;
@@ -196,8 +197,8 @@ int16_t MAG_X_CALIB, MAG_Y_CALIB, MAG_Z_CALIB;
 uint16_t roll_des_wifi;
 char roll_des_buf[sizeof(uint16_t)];
 
-struct ch ch_rcv;
-char ch_rcv_buf[sizeof(ch)];
+struct pwm ch_rcv;
+char ch_rcv_buf[sizeof(ch_rcv)];
 
 typedef enum {
 	POSITIVE,
@@ -305,10 +306,7 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM1_Init();
   MX_USART2_UART_Init();
-
-#ifdef UAV1
   MX_TIM3_Init();
-#endif
   MX_TIM4_Init();
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
@@ -873,6 +871,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 
 	if(huart == &huart2) {
 		memcpy(&ch_rcv,ch_rcv_buf,sizeof(ch_rcv));
+
+		/*
 		ch[0] = ch_rcv.ch1;
 		ch[1] = ch_rcv.ch2;
 		ch[2] = ch_rcv.ch3;
@@ -882,12 +882,18 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 		ch[6] = ch_rcv.ch7;
 		ch[7] = ch_rcv.ch8;
 		ch[8] = ch_rcv.ch9;
+		*/
+		controller_output_2[0] = ch_rcv.w1;
+		controller_output_2[1] = ch_rcv.w2;
+		controller_output_2[2] = ch_rcv.w3;
+		controller_output_2[3] = ch_rcv.w4;
 
-		for(int i=0; i<=sizeof(ch_rcv); i++ ) {
+
+		for(int i=0; i<sizeof(ch_rcv); i++ ) {
 			ch_rcv_buf[i] = '\0';
 		}
-
-		HAL_UART_Receive_DMA(&huart2, (uint8_t*)ch_rcv_buf, sizeof(ch_rcv_buf));
+		//HAL_UART_DMAStop(&huart2);
+		//HAL_UART_Receive_DMA(&huart2, (uint8_t*)ch_rcv_buf, sizeof(ch_rcv_buf));
 
 	}
 }
@@ -1080,6 +1086,11 @@ void TelemPack() {
 	  telem_pack.ch.ch8 = (uint16_t)ch[7];
 	  telem_pack.ch.ch9 = (uint16_t)ch[8];
 
+	  telem_pack.pwm2.w1 = controller_output_2[0];
+	  telem_pack.pwm2.w2 = controller_output_2[1];
+	  telem_pack.pwm2.w3 = controller_output_2[2];
+	  telem_pack.pwm2.w4 = controller_output_2[3];
+
 	  memcpy(buf,&telem_pack,sizeof(telem_pack));
 }
 
@@ -1255,18 +1266,20 @@ void PWMYaz() {
 			  MotorBaslat();
 			  motor_start = true;
 		  }
+
 */
+
+#ifdef UAV1
 	  if(armed) {
 
 
 
 		  if(ch[EMERGENCY_CH-1] < 1500 && ch[3-1] > CH3_MIN + 100) {
-
-
 			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,controller_output[0]);
 			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,controller_output[1]);
 			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,controller_output[2]);
 			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,controller_output[3]);
+
 		  }
 
 		  else  {
@@ -1285,7 +1298,27 @@ void PWMYaz() {
 		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,1000);
 	  }
 
+#endif
 
+#ifdef UAV2
+
+	  if(ch[EMERGENCY_CH-1] < 1500) {
+
+
+		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,controller_output_2[0]);
+		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,controller_output_2[1]);
+		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,controller_output_2[2]);
+		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,controller_output_2[3]);
+
+	  }
+
+	  else {
+		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,1000);
+		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,1000);
+		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,1000);
+		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,1000);
+	  }
+#endif
 
 }
 
@@ -1644,6 +1677,38 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  controller_output[1] = controller.controller_output_pwm[1];
 		  controller_output[2] = controller.controller_output_pwm[2];
 		  controller_output[3] = controller.controller_output_pwm[3];
+
+		#ifdef UAV1
+
+		  if(armed) {
+
+
+
+			  if(ch[EMERGENCY_CH-1] < 1500 && ch[3-1] > CH3_MIN + 100) {
+
+				  controller_output_2[0] = controller.controller_output_pwm2[0];
+				  controller_output_2[1] = controller.controller_output_pwm2[1];
+				  controller_output_2[2] = controller.controller_output_pwm2[2];
+				  controller_output_2[3] = controller.controller_output_pwm2[3];
+
+			  }
+
+			  else {
+				  controller_output_2[0] = 1000;
+				  controller_output_2[1] = 1000;
+				  controller_output_2[2] = 1000;
+				  controller_output_2[3] = 1000;
+			  }
+
+		  }
+
+		  else {
+			  controller_output_2[0] = 1000;
+			  controller_output_2[1] = 1000;
+			  controller_output_2[2] = 1000;
+			  controller_output_2[3] = 1000;
+		  }
+		#endif
 
 		  state_des.rates[0] = controller.roll_rate_des;
 		  state_des.rates[1] = controller.pitch_rate_des;

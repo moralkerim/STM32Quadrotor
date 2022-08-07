@@ -71,6 +71,7 @@ void serialEvent() {
       //  Serial.print("telem_size:"); Serial.println(sizeof(struct telem_pack));
       //memcpy(log_buf + offset_log, buf, sizeof(buf));
 
+      memcpy(buf2send, buf , sizeof(buf));
       sendUDP();
       //writeSD();
     }
@@ -82,31 +83,43 @@ void serialEvent() {
 
 
 void sendUDP() {
-  //  if (millis() - udp_time > 20) {
-  //    udp_time = millis();
-  ToggleLED();
-  /*
+
+
+  if (millis() - udp_time > 20) {
+    udp_time = millis();
+    //client.publish(topic_deb, buf2send, sizeof(struct telem_pack));
     UDP.beginPacket(server_ip, UDP_PORT);
     UDP.write(buf, sizeof(struct telem_pack));
     UDP.endPacket();
+    ToggleLED();
+
+  }
+
+
+  /*
+
   */
 
   /*
     String roll_string = String(telem.time_millis);
     char buf[50];
     roll_string.toCharArray(buf, roll_string.length());
+
   */
+
+
+
+
 #ifdef UAV1
-  char send_buf[sizeof(struct ch)];
-  memcpy(send_buf, &telem.ch.ch1, sizeof(struct ch));
+  char send_buf[sizeof(struct pwm)];
+  memcpy(send_buf, &telem.pwm2.w1, sizeof(struct pwm));
 
-  client.publish(topic, send_buf);
+  //Send channels
+  client.publish(topic_ch, send_buf);
 
-  char deb_buf[10];
+  //Send telem data.
 
-  itoa (telem.ch.ch1, deb_buf, 10 );
-  client.publish(topic_deb, deb_buf);
-  
+
 #endif
 
   //  }
