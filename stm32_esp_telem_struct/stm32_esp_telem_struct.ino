@@ -12,7 +12,7 @@
 #define WIFI_SSID "UAV"
 #define WIFI_PASS "A9A997B60FE11"
 
-#define UAV2
+#define UAV1
 /*
   #define WIFI_SSID "Moral"
   #define WIFI_PASS "Jasperkid1213"

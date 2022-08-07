@@ -100,6 +100,8 @@ extern "C" {
 #define GPS_CLOCK_RATE   40
 #define CONTROLLER_RATE  1
 
+#define ACC_FAIL_LIM 1
+
 #define I2C_READ 0x01
 
 #ifndef PWM_UPPER
@@ -200,6 +202,10 @@ char roll_des_buf[sizeof(uint16_t)];
 struct pwm ch_rcv;
 char ch_rcv_buf[sizeof(ch_rcv)];
 
+unsigned short int failsafe_counter;
+bool in_failsafe;
+float Fail_Acc;
+
 typedef enum {
 	POSITIVE,
 	NEGATIVE,
@@ -246,6 +252,7 @@ void MagCalib(int16_t MAG_X,int16_t MAG_Y,int16_t MAG_Z);
 void GPSInit();
 void SetHome();
 void SetHome2();
+void CheckFailsafe();
 struct attitude DCM2Euler(int16_t acc[3], int16_t mag[3]);
 int _write(int32_t file, uint8_t *ptr, int32_t len);
 /* USER CODE END PFP */
@@ -938,6 +945,34 @@ void checkMode(int mod_ch) {
 	  }
 }
 
+void CheckFailsafe() {
+
+	if(armed) {
+		if(ch[2] < 970 && !in_failsafe) {
+			in_failsafe = true;
+			Fail_Acc = accXc;
+		}
+
+		if(failsafe_counter < 1000) {
+
+			if(in_failsafe) { //5 seconds
+				if(abs(accXc - Fail_Acc) < ACC_FAIL_LIM) {
+					failsafe_counter++;
+				}
+			}
+		}
+
+		else {
+			armed = false;
+			in_failsafe = false;
+			failsafe_counter = 0;
+		}
+	}
+
+
+}
+
+
 void Check_Arm() {
 	if(!armed) {
 		if((ch[2] < CH3_MIN + 100) && (ch[3] > 1700)) {
@@ -1056,8 +1091,8 @@ void TelemPack() {
 
 	  telem_pack.time_millis = HAL_GetTick();
 
-	  telem_pack.acc.x = EKF.acc_pos_x;
-	  telem_pack.acc.y = EKF.acc_pos_y;
+	  telem_pack.acc.x = accXc;
+	  telem_pack.acc.y = accYc;
 	  telem_pack.acc.z = accZm;
 
 	  telem_pack.mag.x = MAG_X_CALIB;
@@ -1270,33 +1305,47 @@ void PWMYaz() {
 */
 
 #ifdef UAV1
-	  if(armed) {
 
 
+		  if(armed) {
 
-		  if(ch[EMERGENCY_CH-1] < 1500 && ch[3-1] > CH3_MIN + 100) {
-			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,controller_output[0]);
-			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,controller_output[1]);
-			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,controller_output[2]);
-			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,controller_output[3]);
+			  if(in_failsafe) {
+				  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,1300);
+				  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,1300);
+				  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,1300);
+				  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,1300);
+			  }
 
-		  }
+			  else {
+				  if(ch[EMERGENCY_CH-1] < 1500 && ch[3-1] > CH3_MIN + 100) {
+						  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,controller_output[0]);
+						  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,controller_output[1]);
+						  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,controller_output[2]);
+						  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,controller_output[3]);
 
-		  else  {
+					  }
+
+					  else  {
+						  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,1000);
+						  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,1000);
+						  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,1000);
+						  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,1000);
+
+					  }
+				  }
+
+
+			  }
+
+		  else {
 			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,1000);
 			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,1000);
 			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,1000);
 			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,1000);
-
 		  }
-	  }
 
-	  else {
-		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,1000);
-		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,1000);
-		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,1000);
-		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,1000);
-	  }
+
+
 
 #endif
 
@@ -1715,7 +1764,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 		  //ie_roll_sat = controller.pid_roll.ie_roll_sat;
 
-
+		  CheckFailsafe();
 		  PWMYaz();
 		  SendTelem();
 
@@ -1742,7 +1791,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 
 				}
 				//printf("Diff: %d\n",Diff);
-					if(Diff >= 1000 && Diff <= 2000) {
+					if(Diff >= 800 && Diff <= 2000) {
 
 						ch_[i] = ch[i];
 						ch[i] = Diff;
