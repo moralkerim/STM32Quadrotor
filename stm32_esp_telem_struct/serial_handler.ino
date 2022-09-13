@@ -43,42 +43,31 @@ void serialEvent() {
 
   while (Serial.available())
   {
-    char inChar = (char)Serial.read();
-    if (inChar == '@') {
-      end_counter++;
-      if (end_counter < 3) {
-        if (end_counter == 2) {
-          char_index = 0;
-          end_counter = 0;
-          break;
-        }
-      }
-    }
+    inChar_ = inChar;
+    inChar = (char)Serial.read();
+    //client.publish(topic_deb, &inChar);
+    if (inChar == 0x01 && inChar_ == 0x04) {  //Start char received
 
-    else {
-      end_counter = 0;
-    }
-    buf[char_index] = inChar;
-    char_index++;
-    //Serial.print(inChar);
-    if (char_index == sizeof(struct telem_pack)) {
-      //Serial.println();
-      char_index = 0;
 
-      offset_log += sizeof(struct telem_pack);
-      memcpy(&telem, buf , sizeof(buf));
+      memcpy(&telem, buf , sizeof(struct telem_pack));
       // Serial.print("buf_size:"); Serial.println(sizeof(buf));
       //  Serial.print("telem_size:"); Serial.println(sizeof(struct telem_pack));
       //memcpy(log_buf + offset_log, buf, sizeof(buf));
 
-      memcpy(buf2send, buf , sizeof(buf));
+      memcpy(buf2send, buf , sizeof(struct telem_pack));
       sendUDP();
-      //writeSD();
+
+      char_index = 0;
+      inChar_ = inChar;
+      inChar = (char)Serial.read();
+      ToggleLED();
+
     }
-  }
 
 
-}
+
+    buf[char_index] = inChar;
+    char_index++;
 
 
 
@@ -91,7 +80,7 @@ void sendUDP() {
     UDP.beginPacket(server_ip, UDP_PORT);
     UDP.write(buf, sizeof(struct telem_pack));
     UDP.endPacket();
-    ToggleLED();
+
 
   }
 
@@ -114,8 +103,14 @@ void sendUDP() {
   char send_buf[sizeof(struct pwm)];
   memcpy(send_buf, &telem.pwm2.w1, sizeof(struct pwm));
 
-  //Send channels
+  //Send outputs
   client.publish(topic_ch, send_buf);
+  long st = millis();
+  char st_buf [10];
+  ltoa(st,st_buf,10);
+  client.publish(topic_deb, st_buf);
+
+
 
   //Send telem data.
 

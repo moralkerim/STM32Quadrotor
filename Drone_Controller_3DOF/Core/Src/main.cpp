@@ -35,13 +35,13 @@
 #include "Kalman.hpp"
 #include "Controller.hpp"
 #include "TelemData.h"
-#include "MedianFilter.h"
 
 extern "C" {
 	#include "bmp180.h"
 	#include "gy-us42v2.h"
 	#include "HMC5883L.h"
 	#include "NMEA.h"
+	#include "moving-median.h"
 
 }
 
@@ -74,8 +74,6 @@ extern "C" {
 #define ACC_Y_ADDR 0x3D
 #define ACC_Z_ADDR 0x3F
 */
-
-#define UAV1
 
 #define MPU6050 (0x68<<1)
 #define MPU6050_POW_REG 0x3e
@@ -112,8 +110,9 @@ extern "C" {
 #define CH_NUM 10
 #define CH0 5000
 #define EMERGENCY_CH 5
-//#define EMERGENCY_CH 5
-#define MOD_CH 6
+#define SWARM_CH 6
+#define MAGNET_CH 7
+#define MOD_CH 8
 #define CH3_MIN 1000
 
 
@@ -175,7 +174,7 @@ int controller_output_2[4];
 bool Is_First_Captured;
 volatile int IC_Val2, IC_Val1, Diff, Diff_debug;
 volatile short int i;
-int ch[CH_NUM+1], ch_[CH_NUM+1];
+int ch[CH_NUM+1], ch_[CH_NUM+1], _ch[CH_NUM+1];
 unsigned short int sync;
 long int delay_timer, current_time, arm_timer, test_timer, disarm_timer, sent_time;
 bool delay_start, arm_start, armed, motor_start, disarm_start, sonar_ready;
@@ -195,6 +194,7 @@ struct attitude euler_angles;
 unsigned long gga_time, gga_time_dif;
 int16_t MAG_X, MAG_Y, MAG_Z;
 int16_t MAG_X_CALIB, MAG_Y_CALIB, MAG_Z_CALIB;
+bool ch_init;
 
 uint16_t roll_des_wifi;
 char roll_des_buf[sizeof(uint16_t)];
@@ -202,9 +202,13 @@ char roll_des_buf[sizeof(uint16_t)];
 struct pwm ch_rcv;
 char ch_rcv_buf[sizeof(ch_rcv)];
 
+struct swarm_pack swarm_pack;
+char swarm_rcv_buf[sizeof(swarm_pack)];
+
 unsigned short int failsafe_counter;
 bool in_failsafe;
 float Fail_Acc;
+
 
 typedef enum {
 	POSITIVE,
@@ -212,12 +216,27 @@ typedef enum {
 	NEUTRAL
 }sign;
 
+typedef enum {
+	NORMAL,
+	SWARM
+}SWARM_MODE;
+
+
+SWARM_MODE swarm_mode = NORMAL;
+
 sign yaw_sign = NEUTRAL;
 int8_t yaw_counter;
 uint16_t jump_counter;
 float yaw_prev;
 
 GPSSTRUCT gpsData;
+
+movingMedian_t med_filter1;
+movingMedian_t med_filter2;
+movingMedian_t med_filter3;
+movingMedian_t med_filter4;
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -253,6 +272,8 @@ void GPSInit();
 void SetHome();
 void SetHome2();
 void CheckFailsafe();
+void CheckSwarm();
+void SwitchMag();
 struct attitude DCM2Euler(int16_t acc[3], int16_t mag[3]);
 int _write(int32_t file, uint8_t *ptr, int32_t len);
 /* USER CODE END PFP */
@@ -346,6 +367,22 @@ int main(void)
   accY = AccOku(ACC_Y_ADDR);
   accZ = AccOku(ACC_Z_ADDR);
 
+  ch[0] = 1500;
+  _ch[0] = 1500;
+
+
+	for(int i=1; i< CH_NUM; i++) {
+		ch[i] = 1000;
+		_ch[i] = 1000;
+	}
+
+
+	ch_init = true;
+
+	moving_median_create(&med_filter1, 3, 3);
+	moving_median_create(&med_filter2, 3, 3);
+	moving_median_create(&med_filter3, 3, 3);
+	moving_median_create(&med_filter4, 3, 3);
 
   /*
   float acctop=sqrt(accX*accX+accY*accY+accZ*accZ);
@@ -823,10 +860,10 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_15, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : LED_Pin */
   GPIO_InitStruct.Pin = LED_Pin;
@@ -835,19 +872,19 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : PA4 PA5 PA15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
   /*Configure GPIO pin : PB1 */
   GPIO_InitStruct.Pin = GPIO_PIN_1;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PA15 */
-  GPIO_InitStruct.Pin = GPIO_PIN_15;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 }
 
@@ -877,23 +914,59 @@ void MPU6050_Baslat(void) {
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 
 	if(huart == &huart2) {
-		memcpy(&ch_rcv,ch_rcv_buf,sizeof(ch_rcv));
 
-		/*
-		ch[0] = ch_rcv.ch1;
-		ch[1] = ch_rcv.ch2;
-		ch[2] = ch_rcv.ch3;
-		ch[3] = ch_rcv.ch4;
-		ch[4] = ch_rcv.ch5;
-		ch[5] = ch_rcv.ch6;
-		ch[6] = ch_rcv.ch7;
-		ch[7] = ch_rcv.ch8;
-		ch[8] = ch_rcv.ch9;
-		*/
-		controller_output_2[0] = ch_rcv.w1;
-		controller_output_2[1] = ch_rcv.w2;
-		controller_output_2[2] = ch_rcv.w3;
-		controller_output_2[3] = ch_rcv.w4;
+		memcpy(&ch_rcv,ch_rcv_buf,sizeof(ch_rcv));
+		bool data_healty = true;
+		if(ch_rcv.w1 < 1000 || ch_rcv.w1 > 2000) {
+			data_healty = false;
+		}
+
+		else if(ch_rcv.w2 < 1000 || ch_rcv.w2 > 2000) {
+			data_healty = false;
+		}
+
+		else if(ch_rcv.w3 < 1000 || ch_rcv.w3 > 2000) {
+			data_healty = false;
+		}
+
+		else if(ch_rcv.w4 < 1000 || ch_rcv.w4 > 2000) {
+			data_healty = false;
+		}
+
+		if(data_healty) {
+			/*
+			controller_output_2[0] = ch_rcv.w1;
+			controller_output_2[1] = ch_rcv.w2;
+			controller_output_2[2] = ch_rcv.w3;
+			controller_output_2[3] = ch_rcv.w4;
+
+
+			moving_median_filter(&med_filter1, ch_rcv.w1);
+			moving_median_filter(&med_filter2, ch_rcv.w2);
+			moving_median_filter(&med_filter3, ch_rcv.w3);
+			moving_median_filter(&med_filter4, ch_rcv.w4);
+
+*/
+			controller_output_2[0] = ch_rcv.w1;
+			controller_output_2[1] = ch_rcv.w2;
+			controller_output_2[2] = ch_rcv.w3;
+			controller_output_2[3] = ch_rcv.w4;
+
+/*
+			controller_output_2[0] = med_filter1.filtered;
+					controller_output_2[1] = med_filter2.filtered;
+					controller_output_2[2] = med_filter3.filtered;
+					controller_output_2[3] = med_filter4.filtered;
+					*/
+		}
+
+/*
+		controller_output_2[0] = med_filter1.filtered;
+		controller_output_2[1] = med_filter2.filtered;
+		controller_output_2[2] = med_filter3.filtered;
+		controller_output_2[3] = med_filter4.filtered;
+	*/
+
 
 
 		for(int i=0; i<sizeof(ch_rcv); i++ ) {
@@ -933,7 +1006,7 @@ void checkMode(int mod_ch) {
 	  else if (mod_ch >=1400 && mod_ch <1700) {
 		  //Run (struct state state, struct state state_des, float z_vel, float z0, float z, float ch3),
 		 // controller.mod = LOITER;
-		  controller.mod = ALT_HOLD;
+		  controller.mod = STABILIZE;
 
 		  z0 = controller.p_alt.zi;
 
@@ -941,8 +1014,66 @@ void checkMode(int mod_ch) {
 
 	  else {
 		  //controller.mod = LOITER;
-		  controller.mod = ALT_HOLD;
+		  controller.mod = STABILIZE;
 	  }
+}
+
+void SwitchMag() {
+
+	char state;
+
+	// determine which state is the switch on
+	if		(ch[MAGNET_CH-1] > 750  && ch[MAGNET_CH-1] < 1250) state = 0;
+	else if (ch[MAGNET_CH-1] > 1250 && ch[MAGNET_CH-1] < 1750) state = 1;
+	else if (ch[MAGNET_CH-1] > 1750 && ch[MAGNET_CH-1] < 2250) state = 2;
+	else state = -1;
+
+	// change magnet state based on state of switch
+	// state = 0 -> off
+	// state = 1 -> attach
+	// state = 2 -> separate
+
+	switch(state) {
+	case 0:
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4|GPIO_PIN_5, GPIO_PIN_RESET);
+		break;
+	case 1:
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+		break;
+	case 2:
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+		break;
+	default:
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4|GPIO_PIN_5, GPIO_PIN_RESET);
+		break;
+	}
+}
+
+void CheckSwarm() {
+	if(ch[SWARM_CH-1] > 1500) {
+		if(swarm_mode != SWARM) {
+			swarm_mode = SWARM;
+
+			controller.swarm = true;
+
+			controller.pid_roll.reset();
+			controller.pid_pitch.reset();
+			controller.pid_yaw.reset();
+		}
+	}
+
+	else {
+		if(swarm_mode != NORMAL) {
+			controller.swarm = false;
+			swarm_mode = NORMAL;
+
+			controller.pid_roll.reset();
+			controller.pid_pitch.reset();
+			controller.pid_yaw.reset();
+		}
+	}
 }
 
 void CheckFailsafe() {
@@ -1120,6 +1251,8 @@ void TelemPack() {
 	  telem_pack.ch.ch7 = (uint16_t)ch[6];
 	  telem_pack.ch.ch8 = (uint16_t)ch[7];
 	  telem_pack.ch.ch9 = (uint16_t)ch[8];
+	  telem_pack.ch.ch10 = (uint16_t)ch[9];
+	  telem_pack.ch.ch11 = (uint16_t)ch[10];
 
 	  telem_pack.pwm2.w1 = controller_output_2[0];
 	  telem_pack.pwm2.w2 = controller_output_2[1];
@@ -1131,10 +1264,18 @@ void TelemPack() {
 
 void SendTelem() {
 	  TelemPack();
+	  char end_char = 0x01;
+	  HAL_UART_Transmit(&huart2, (uint8_t*)&end_char, sizeof(end_char), 100);
 	  HAL_UART_Transmit(&huart2, (uint8_t*)buf, sizeof(struct telem_pack), 100);
+	  end_char = 0x04;
+	  HAL_UART_Transmit(&huart2, (uint8_t*)&end_char, sizeof(end_char), 100);
+
+
+	  /*
 	  char end_char = '@';
 	  HAL_UART_Transmit(&huart2, (uint8_t*)&end_char, sizeof(end_char), 100);
 	  HAL_UART_Transmit(&huart2, (uint8_t*)&end_char, sizeof(end_char), 100);
+	  */
 	  sent_time = HAL_GetTick();
 
 
@@ -1353,11 +1494,14 @@ void PWMYaz() {
 
 	  if(ch[EMERGENCY_CH-1] < 1500) {
 
+			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,controller_output_2[0]);
+			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,controller_output_2[1]);
+			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,controller_output_2[2]);
+			  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,controller_output_2[3]);
 
-		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,controller_output_2[0]);
-		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,controller_output_2[1]);
-		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,controller_output_2[2]);
-		  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,controller_output_2[3]);
+
+
+
 
 	  }
 
@@ -1458,7 +1602,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		camera_counter++;
 		mag_counter++;
 		gps_counter++;
-
+#ifdef UAV1
 		if(gps_counter == GPS_CLOCK_RATE) {
 			gps_counter = 0;
 			getGPSData(&gpsData);
@@ -1584,17 +1728,17 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 
 		}
-
+#endif
 		//}
 
 		if(controller_counter == CONTROLLER_RATE) { //5 ms || 200 Hz
 			_controller_timer = controller_timer;
 			controller_timer = HAL_GetTick();
 			controller_timer_dif = controller_timer-_controller_timer;
-
 		  controller_counter = 0;
 
 
+#ifdef UAV1
 
 		  gyroX = (GyroOku(GYRO_X_ADDR)- GyroXh)/14.375 ;
 		  gyroY = (GyroOku(GYRO_Y_ADDR)- GyroYh)/14.375 ;
@@ -1726,7 +1870,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  controller_output[1] = controller.controller_output_pwm[1];
 		  controller_output[2] = controller.controller_output_pwm[2];
 		  controller_output[3] = controller.controller_output_pwm[3];
-
+#endif
 		#ifdef UAV1
 
 		  if(armed) {
@@ -1765,8 +1909,10 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  //ie_roll_sat = controller.pid_roll.ie_roll_sat;
 
 		  CheckFailsafe();
+		  CheckSwarm();
 		  PWMYaz();
 		  SendTelem();
+		  SwitchMag();
 
 
 		  //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_1);
@@ -1792,11 +1938,20 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 				}
 				//printf("Diff: %d\n",Diff);
 					if(Diff >= 800 && Diff <= 2000) {
-
+					#ifdef UAV1
 						ch_[i] = ch[i];
 						ch[i] = Diff;
 						ch_count++;
+					#endif
 
+					#ifdef UAV2
+						if(i == EMERGENCY_CH-1) {
+							ch_[i] = ch[i];
+							ch[EMERGENCY_CH-1] = Diff;
+						}
+
+						ch_count++;
+					#endif
 
 					}
 

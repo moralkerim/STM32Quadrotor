@@ -27,13 +27,14 @@ def on_message(client, userdata, message):
 now = datetime.now()
 dt_string = now.strftime("%d.%m.%Y.%H.%M.%S")
 
-broker_address="192.168.1.41"
+broker_address="192.168.1.38"
+port = 1884
 #broker_address="iot.eclipse.org"
 print("creating new instance")
 client = mqtt.Client("P1") #create new instance
 client.on_message=on_message #attach function to callback
 print("connecting to broker")
-client.connect(broker_address) #connect to broker
+client.connect(broker_address,port) #connect to broker
 client.loop_start() #start the loop
 print("Subscribing to topic","ch")
 client.subscribe("ch")

@@ -67,6 +67,21 @@ classdef Telem < uint32
       vxbody_gps ( 62 )
       vybody_gps ( 63 )
       vzbody_gps ( 64 )
+      ch1 ( 65 )
+      ch2 ( 66 )
+      ch3 ( 67 )
+      ch4 ( 68 )
+      ch5 ( 69 )
+      ch6 ( 70 )
+      ch7 ( 71 )
+      ch8 ( 72 )
+      ch9 ( 73 )
+      ch10 ( 74 )
+      ch11 ( 75 )
+      pwm2_1 ( 76 )
+      pwm2_2 ( 77 )
+      pwm2_3 ( 78 )
+      pwm2_4 ( 79 )
    end
 end
 

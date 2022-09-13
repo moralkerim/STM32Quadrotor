@@ -16,11 +16,10 @@
 /*
   #define WIFI_SSID "Moral"
   #define WIFI_PASS "Jasperkid1213"
-*/
 
+*/
 //LAB
-IPAddress server_ip(192, 168, 1, 41);
-//192.168.43.152
+IPAddress server_ip(192, 168, 1, 38);
 
 //Phone
 //IPAddress server_ip(192, 168, 43, 152);
@@ -29,16 +28,17 @@ IPAddress server_ip(192, 168, 1, 41);
 //IPAddress server_ip(192, 168, 1, 103);
 
 #ifdef UAV1
-  #define UDP_PORT 9000
+#define UDP_PORT 9000
 #endif
 
 #ifdef UAV2
-  #define UDP_PORT 9001
+#define UDP_PORT 9001
 #endif
 
 #define CS_PIN  D8
 #define SD_BUFFER_SIZE 1024
 
+char inChar, inChar_;
 //struct telem_pack from TelemData.h
 bool received, file_closed;
 bool send_mqtt;
@@ -48,23 +48,26 @@ WiFiUDP UDP;
 struct telem_pack telem;
 
 char test_buf[sizeof(telem)];
-char buf[sizeof(struct telem_pack)];
-char buf2send[sizeof(struct telem_pack)];
+char buf[1024];
+char buf2send[1024];
 char log_buf[SD_BUFFER_SIZE];
 int char_index;
 bool led_state, armed = true;
 unsigned int sd_counter, end_counter;
 unsigned long sd_time, udp_time, sd_send_time;
 
+struct swarm_pack swarm_pack;
+
 size_t offset_log;
 
 //File dataFile;
 
 //MQTT
-const char *mqtt_broker = "192.168.1.41"; // Enter your WiFi or Ethernet IP
+const char *mqtt_broker = "192.168.1.38"; // Enter your WiFi or Ethernet IP
 const char *topic_ch = "ch";
+const char *topic_rem = "remote";
 const char *topic_deb = "debug";
-const int mqtt_port = 1883;
+const int mqtt_port = 1884;
 WiFiClient espClient;
 PubSubClient client(espClient);
 
@@ -102,6 +105,7 @@ void setup() {
     if (client.connect(client_id.c_str())) {
 #ifdef UAV2
       client.subscribe(topic_ch);
+      //client.subscribe(topic_rem);
 #endif
 
       //Serial.println("Public emqx mqtt broker connected");
@@ -139,6 +143,45 @@ void loop() {
   //writeSD();
 }
 
+
+/*
+
+void callback(char *topic, uint8_t *payload, unsigned int length) {
+  //Serial.print("Message arrived in topic: ");
+  // Serial.println(topic);
+  // Serial.print("Message:");
+  char rec_buf[length + 1];
+
+  for (int i = 0; i < length; i++) {
+    //Serial.print((char) payload[i]);
+    rec_buf[i] = (char)payload[i];
+  }
+  //Serial.println();
+  //Serial.println(rec_buf);
+  //float roll_des = atof(rec_buf);
+
+  if (!strcmp(topic, topic_ch)) {
+    memcpy(&swarm_pack.pwm2.w1, rec_buf, sizeof(struct pwm));
+    char send_buf[sizeof(struct swarm_pack)];
+    memcpy(send_buf, &swarm_pack, sizeof(struct swarm_pack));
+    Serial.write(send_buf, sizeof(struct swarm_pack));
+    // Serial.println(swarm_pack.pwm2.w1);
+  }
+
+  else if (!strcmp(topic, topic_rem)) {
+    // Serial.println(swarm_pack.ch.ch1);
+    memcpy(&swarm_pack.ch.ch1, rec_buf, sizeof(struct ch));
+  }
+
+
+
+
+  //Serial.println(ch_deb.ch1);
+  //Serial.write(ch1_buf, sizeof(uint16_t));
+
+  //  Serial.println();
+  //  Serial.println(" - - - - - - - - - - - -");
+} */
 
 void callback(char *topic, uint8_t *payload, unsigned int length) {
   //Serial.print("Message arrived in topic: ");

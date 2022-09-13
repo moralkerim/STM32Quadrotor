@@ -75,19 +75,11 @@ class Telem(Enum):
       vxbody_gps = 62
       vybody_gps = 63
       vzbody_gps = 64
-      ch1 = 65
-      ch2 = 66
-      ch3 = 67
-      ch4 = 68
-      ch5 = 69
-      ch6 = 70
-      ch7 = 71
-      ch9 = 72
-      ch8 = 73
-      pwm2_1 = 74
-      pwm2_2 = 75
-      pwm2_3 = 76
-      pwm2_4 = 77
+      mag = 65
+      pwm2_1 = 66
+      pwm2_2 = 67
+      pwm2_3 = 68
+      pwm2_4 = 69
 
 exit = True      
 for telem in Telem:
@@ -151,17 +143,23 @@ def animate(i,data_enum):
         (data, addr) = mySocket.recvfrom(1024)
 
         empty_socket(mySocket)
-        data_org = struct.unpack('<ffffffffffffHHHHffffffffffffffffffffffffLBhhhhfffhhhffffffffffffHHHHHHHHHHHHH', data)
+        
+        try:
+            data_org = struct.unpack('<ffffffffffffHHHHffffffffffffffffffffffffLBhhhhfffhhhffffffffffff?HHHH', data)
 
-        data_enum.append(data_org[telem_value-1])  
-        #pitch.append(data_org[1])
-        
-        data_enum = data_enum[-x_len:]
-        #pitch = pitch[-x_len:]
-        
-        linex.set_ydata(data_enum)
-        #liney.set_ydata(pitch)
-        return linex,
-    
-ani = animation.FuncAnimation(fig, animate, fargs=(data_enum,), interval=0.05, blit=True)
-plt.show()
+            data_enum.append(data_org[telem_value-1])  
+            #pitch.append(data_org[1])
+            
+            data_enum = data_enum[-x_len:]
+            #pitch = pitch[-x_len:]
+            
+            linex.set_ydata(data_enum)
+            #liney.set_ydata(pitch)
+            return linex,
+        except:
+            print(data)
+try:  
+    ani = animation.FuncAnimation(fig, animate, fargs=(data_enum,), interval=0.05, blit=True)
+    plt.show()
+except:
+    print("No plot")

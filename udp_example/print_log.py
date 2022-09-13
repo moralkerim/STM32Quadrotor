@@ -26,7 +26,7 @@ mySocket.bind((ip, port))
 
 while True:
     (data, addr) = mySocket.recvfrom(1024)
-    data_org = struct.unpack('<ffffffffffffHHHHffffffffffffffffffffffffLBhhhhfffhhhffffffffffffHHHHHHHHHHHHH', data)
+    data_org = struct.unpack('<ffffffffffffHHHHffffffffffffffffffffffffLBhhhhfffhhhffffffffffffHHHHHHHHHHHHHHH', data)
     with open(dt_string + '.txt', "a") as file:
         file.write("\n")
         file.write(str(data_org))
