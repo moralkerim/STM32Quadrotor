@@ -131,6 +131,7 @@ UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
 DMA_HandleTypeDef hdma_usart1_rx;
 DMA_HandleTypeDef hdma_usart2_rx;
+DMA_HandleTypeDef hdma_usart2_tx;
 
 /* USER CODE BEGIN PV */
 const float Sx = -0.0030;
@@ -221,7 +222,13 @@ typedef enum {
 	SWARM
 }SWARM_MODE;
 
+typedef enum {
+	start,
+	stop,
+	package
+}TX_TYPE;
 
+TX_TYPE tx_type = start;
 SWARM_MODE swarm_mode = NORMAL;
 
 sign yaw_sign = NEUTRAL;
@@ -295,6 +302,31 @@ void Delay(long millis) {
 	}
 }
 
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
+	if(huart->Instance == huart2.Instance) {
+		char end_char;
+		switch(tx_type) {
+		case start:
+			end_char = 0x01;
+			HAL_UART_Transmit_DMA(&huart2, (uint8_t*)&end_char, sizeof(end_char));
+			tx_type = package;
+			break;
+
+		case package:
+			HAL_UART_Transmit_DMA(&huart2, (uint8_t*)buf, sizeof(struct telem_pack));
+			tx_type = stop;
+			break;
+
+		case stop:
+			end_char = 0x04;
+		    HAL_UART_Transmit_DMA(&huart2, (uint8_t*)&end_char, sizeof(end_char));
+		    tx_type = start;
+		    sent_time = HAL_GetTick();
+		    break;
+		}
+
+	}
+}
 
 
 /* USER CODE END 0 */
@@ -408,7 +440,10 @@ int main(void)
   //PPM Input Capture Kanalları
   //HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_2);
   HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_3);
-  //printf("Starting...\r\n");
+
+	char end_char = 0x01;
+	HAL_UART_Transmit_DMA(&huart2, (uint8_t*)&end_char, sizeof(end_char));
+	tx_type = package;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -838,6 +873,9 @@ static void MX_DMA_Init(void)
   /* DMA1_Channel6_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
+  /* DMA1_Channel7_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel7_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel7_IRQn);
 
 }
 
@@ -1265,17 +1303,11 @@ void TelemPack() {
 void SendTelem() {
 	  TelemPack();
 	  char end_char = 0x01;
-	  HAL_UART_Transmit(&huart2, (uint8_t*)&end_char, sizeof(end_char), 100);
-	  HAL_UART_Transmit(&huart2, (uint8_t*)buf, sizeof(struct telem_pack), 100);
+	  HAL_UART_Transmit_DMA(&huart2, (uint8_t*)&end_char, sizeof(end_char));
+	  HAL_UART_Transmit_DMA(&huart2, (uint8_t*)buf, sizeof(struct telem_pack));
 	  end_char = 0x04;
-	  HAL_UART_Transmit(&huart2, (uint8_t*)&end_char, sizeof(end_char), 100);
+	  HAL_UART_Transmit_DMA(&huart2, (uint8_t*)&end_char, sizeof(end_char));
 
-
-	  /*
-	  char end_char = '@';
-	  HAL_UART_Transmit(&huart2, (uint8_t*)&end_char, sizeof(end_char), 100);
-	  HAL_UART_Transmit(&huart2, (uint8_t*)&end_char, sizeof(end_char), 100);
-	  */
 	  sent_time = HAL_GetTick();
 
 
@@ -1907,11 +1939,11 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  state_des.rates[1] = controller.pitch_rate_des;
 
 		  //ie_roll_sat = controller.pid_roll.ie_roll_sat;
-
+		 // SendTelem();
+		  TelemPack();
 		  CheckFailsafe();
 		  CheckSwarm();
 		  PWMYaz();
-		  SendTelem();
 		  SwitchMag();
 
 
