@@ -9,8 +9,8 @@
 #include "TelemData.h"
 
 
-#define WIFI_SSID "UAV"
-#define WIFI_PASS "A9A997B60FE11"
+#define WIFI_SSID "Ecospark_2.4GHz"
+#define WIFI_PASS "Jasperkid1213"
 
 #define UAV1
 /*
@@ -19,7 +19,7 @@
 
 */
 //LAB
-IPAddress server_ip(192, 168, 1, 38);
+IPAddress server_ip(192, 168, 1, 37);
 
 //Phone
 //IPAddress server_ip(192, 168, 43, 152);
@@ -63,11 +63,11 @@ size_t offset_log;
 //File dataFile;
 
 //MQTT
-const char *mqtt_broker = "192.168.1.38"; // Enter your WiFi or Ethernet IP
+const char *mqtt_broker = "192.168.1.37"; // Enter your WiFi or Ethernet IP
 const char *topic_ch = "ch";
 const char *topic_rem = "remote";
 const char *topic_deb = "debug";
-const int mqtt_port = 1884;
+const int mqtt_port = 1883;
 WiFiClient espClient;
 PubSubClient client(espClient);
 

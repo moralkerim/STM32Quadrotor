@@ -50,10 +50,6 @@ void serialEvent() {
 
 
       memcpy(&telem, buf , sizeof(struct telem_pack));
-      // Serial.print("buf_size:"); Serial.println(sizeof(buf));
-      //  Serial.print("telem_size:"); Serial.println(sizeof(struct telem_pack));
-      //memcpy(log_buf + offset_log, buf, sizeof(buf));
-
       memcpy(buf2send, buf , sizeof(struct telem_pack));
       sendUDP();
 
@@ -70,10 +66,13 @@ void serialEvent() {
     char_index++;
 
 
+}
+
+}
 
 void sendUDP() {
 
-
+/*
   if (millis() - udp_time > 20) {
     udp_time = millis();
     //client.publish(topic_deb, buf2send, sizeof(struct telem_pack));
@@ -83,7 +82,7 @@ void sendUDP() {
 
 
   }
-
+*/
 
   /*
 
