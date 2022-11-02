@@ -427,10 +427,6 @@ int main(void)
 
 	ch_init = true;
 
-	moving_median_create(&med_filter1, 3, 3);
-	moving_median_create(&med_filter2, 3, 3);
-	moving_median_create(&med_filter3, 3, 3);
-	moving_median_create(&med_filter4, 3, 3);
 
   /*
   float acctop=sqrt(accX*accX+accY*accY+accZ*accZ);

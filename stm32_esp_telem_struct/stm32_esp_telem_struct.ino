@@ -49,7 +49,7 @@ size_t offset_log;
 char inChar;
 File dataFile;
 void setup() {
-  Serial.begin(1000000);
+  Serial.begin(512000);
   //stmSerial.begin(9600);
   // Begin WiFi
   pinMode(LED_BUILTIN, OUTPUT);
