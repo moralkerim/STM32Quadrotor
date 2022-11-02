@@ -24,6 +24,7 @@
 #include "main.h"
 #include "dma.h"
 #include "i2c.h"
+#include "spi.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -47,6 +48,7 @@ extern "C" {
 	#include "HMC5883L.h"
 	#include "NMEA.h"
 	#include "moving-median.h"
+	#include "nrf24.h"
 
 }
 
@@ -201,7 +203,7 @@ char swarm_rcv_buf[sizeof(swarm_pack)];
 unsigned short int failsafe_counter;
 bool in_failsafe;
 float Fail_Acc;
-
+uint8_t period;
 
 typedef enum {
 	POSITIVE,
@@ -234,6 +236,13 @@ movingMedian_t med_filter1;
 movingMedian_t med_filter2;
 movingMedian_t med_filter3;
 movingMedian_t med_filter4;
+
+uint64_t TxpipeAddrs = 122;
+char myTxData[32] = "Mili Saniye!!!\r\n";
+
+
+uint64_t RxpipeAddrs = 122;
+char RxData[50];
 
 
 /* USER CODE END PV */
@@ -303,7 +312,10 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
 			end_char = 0x04;
 		    HAL_UART_Transmit_DMA(&huart2, (uint8_t*)&end_char, sizeof(end_char));
 		    tx_type = start;
+
+		    long int sent_time_ = sent_time;
 		    sent_time = HAL_GetTick();
+		    period = sent_time - sent_time_;
 		    break;
 		}
 
@@ -352,6 +364,7 @@ int main(void)
   MX_TIM4_Init();
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
+  MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
 
   HAL_UART_Receive_DMA(&huart1, (uint8_t*)&cam_data, sizeof(cam_data));
@@ -366,6 +379,26 @@ int main(void)
   HAL_Delay(1000);
 
   Ringbuf_init();
+
+	/***********NRF Ayarlari****************/
+/*
+#ifdef UAV1
+    NRF24_begin(GPIOB, CSN_Pin, CE_Pin, hspi1);
+	NRF24_stopListening();
+	NRF24_openWritingPipe(TxpipeAddrs);
+	NRF24_setAutoAck(false);
+	NRF24_setChannel(34);
+#endif
+
+#ifdef UAV2
+	NRF24_begin(GPIOB, CSN_Pin, CE_Pin, hspi1);
+	//nrf24_DebugUART_Init(huart1);
+	NRF24_setAutoAck(false);
+	NRF24_setChannel(34);
+	NRF24_openReadingPipe(1, RxpipeAddrs);
+	NRF24_startListening();
+#endif
+*/
   //Gyro kalibrasyon hatalarını hesapla.
   HAL_Delay(2000);
   //EKF.roll_bias=GyroErr(GYRO_X_ADDR)/14.375; EKF.pitch_bias=-1*GyroErr(GYRO_Y_ADDR)/14.375;
@@ -434,9 +467,18 @@ int main(void)
 
   while (1)
   {
+#ifdef UAV2
+		if(NRF24_available())
+		{
+			NRF24_read(RxData, 32);
+			//HAL_UART_Transmit(&huart1, (uint8_t *)RxData, 32, 10);
+		}
 
+#endif
 
-
+#ifdef UAV1
+//		NRF24_write(myTxData, 32);
+#endif
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -505,6 +547,7 @@ void MPU6050_Baslat(void) {
 
 #ifdef UAV2
 
+/*
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 
 	if(huart == &huart2) {
@@ -530,7 +573,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 }
 
 }
-
+*/
 #endif
 
 void MagCalib(int16_t MAG_X,int16_t MAG_Y,int16_t MAG_Z) {
@@ -1150,6 +1193,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		mag_counter++;
 		gps_counter++;
 #ifdef UAV1
+		/*
 		if(gps_counter == GPS_CLOCK_RATE) {
 			gps_counter = 0;
 			getGPSData(&gpsData);
@@ -1188,7 +1232,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		//else {
 		//	EKF.Qgps = 400 * gpsData.ggastruct.HDOP;
 		//}
-
+*/
 		if(mag_counter == MAG_CLOCK_RATE) {
 			mag_counter = 0;
 			HMC5883L_getMagData(&MAG_X, &MAG_Y, &MAG_Z);
@@ -1460,6 +1504,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  CheckSwarm();
 		  PWMYaz();
 		  SwitchMag();
+//		  NRF24_write(myTxData, 32);
 
 
 		  //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_1);

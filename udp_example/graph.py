@@ -145,7 +145,7 @@ def animate(i,data_enum):
         empty_socket(mySocket)
         
         try:
-            data_org = struct.unpack('<ffffffffffffHHHHffffffffffffffffffffffffLBhhhhfffhhhffffffffffff?HHHH', data)
+            data_org = struct.unpack('<ffffffffffffHHHHffffffffffffffffffffffffLBhhhhfffhhhffffffffffffHHHHHHHHHHHHHHH', data)
 
             data_enum.append(data_org[telem_value-1])  
             #pitch.append(data_org[1])
