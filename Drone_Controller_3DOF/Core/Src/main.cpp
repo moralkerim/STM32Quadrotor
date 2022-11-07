@@ -230,12 +230,6 @@ int8_t yaw_counter;
 uint16_t jump_counter;
 float yaw_prev;
 
-GPSSTRUCT gpsData;
-
-movingMedian_t med_filter1;
-movingMedian_t med_filter2;
-movingMedian_t med_filter3;
-movingMedian_t med_filter4;
 
 uint64_t TxpipeAddrs = 122;
 char myTxData[32] = "Mili Saniye!!!\r\n";
@@ -267,8 +261,8 @@ void Check_Disarm(void);
 float square(float x);
 void MagCalib(int16_t MAG_X,int16_t MAG_Y,int16_t MAG_Z);
 void GPSInit();
-void SetHome();
-void SetHome2();
+//void SetHome();
+//void SetHome2();
 void CheckFailsafe();
 void CheckSwarm();
 void SwitchMag();
@@ -401,40 +395,15 @@ int main(void)
 */
   //Gyro kalibrasyon hatalarını hesapla.
   HAL_Delay(2000);
-  //EKF.roll_bias=GyroErr(GYRO_X_ADDR)/14.375; EKF.pitch_bias=-1*GyroErr(GYRO_Y_ADDR)/14.375;
+
   GyroXh = GyroErr(GYRO_X_ADDR); GyroYh=GyroErr(GYRO_Y_ADDR); GyroZh=GyroErr(GYRO_Z_ADDR);
   AccXh = AccErr(ACC_X_ADDR)* .0078; AccYh = AccErr(ACC_Y_ADDR)* .0078; AccZh = AccErr(ACC_Z_ADDR)* .0078;
-
-  //AccXh = 0.815*AccXh - 0.42592*AccYh - 0.072464*AccZh + 0.001334;
-  //AccYh = 0.96009*AccYh - 0.42592*AccXh + 0.0091315*AccZh + 0.042165;
-  //AccZh = 0.0091315*AccYh - 0.072464*AccXh + 0.98549*AccZh + 0.08443;
 
   //İvmeölçer degerlerini oku
 
   accX = AccOku(ACC_X_ADDR);
   accY = AccOku(ACC_Y_ADDR);
   accZ = AccOku(ACC_Z_ADDR);
-
-  ch[0] = 1500;
-  _ch[0] = 1500;
-
-
-	for(int i=1; i< CH_NUM; i++) {
-		ch[i] = 1000;
-		_ch[i] = 1000;
-	}
-
-
-	ch_init = true;
-
-
-  /*
-  float acctop=sqrt(accX*accX+accY*accY+accZ*accZ);
-
-  float rad2deg = 57.3248;
-  EKF.PITCH_OFFSET = -1 * asin(accX/acctop)*rad2deg;
-  EKF.ROLL_OFFSET  = -1 * asin(accY/acctop)*rad2deg;
-  */
 
   //Kontrolcü Timer'ı
   HAL_TIM_Base_Start_IT(&htim2);
@@ -453,9 +422,10 @@ int main(void)
   //HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_2);
   HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_3);
 
-	char end_char = 0x01;
-	HAL_UART_Transmit_DMA(&huart2, (uint8_t*)&end_char, sizeof(end_char));
-	tx_type = package;
+  //ESP DMA Başlat.
+  char end_char = 0x01;
+  HAL_UART_Transmit_DMA(&huart2, (uint8_t*)&end_char, sizeof(end_char));
+  tx_type = package;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -710,7 +680,7 @@ void Check_Arm() {
 					controller.pid_yaw.reset();
 					armed = true;
 					EKF.armed = true;
-					SetHome2();
+					//SetHome2();
 					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
 
 					/*
@@ -822,6 +792,7 @@ void TelemPack() {
 	  telem_pack.mag.y = MAG_Y_CALIB;
 	  telem_pack.mag.z = MAG_Z_CALIB;
 
+	  /*
 	  telem_pack.gps.lla.x = gpsData.ggastruct.lcation.latitude;
 	  telem_pack.gps.lla.y = gpsData.ggastruct.lcation.longitude;
 
@@ -833,6 +804,7 @@ void TelemPack() {
 
 	  telem_pack.gps.vel_body.x = EKF.vgpsx;
 	  telem_pack.gps.vel_body.y = EKF.vgpsy;
+	   */
 
 	  telem_pack.ch.ch1 = (uint16_t)ch[0];
 	  telem_pack.ch.ch2 = (uint16_t)ch[1];
@@ -1141,7 +1113,7 @@ int _write(int32_t file, uint8_t *ptr, int32_t len) {
 	}
 	return len;
 }
-
+/*
 void SetHome() {
 	home_counter++;
 	if(home_counter != 11) {
@@ -1173,13 +1145,15 @@ void SetHome2() {
 
 		home = true;
 }
+*/
 
+//Ana Kontrolcü döngüsü
 void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 	if(htim == &htim2) {
 		//1.25 ms || 800 Hz
-		  Check_Arm();
-		  Check_Disarm();
+		Check_Arm();
+		Check_Disarm();
 
 		set_ucounter(SONAR_CLOCK_RATE);
 		set_b_counter(12);
@@ -1187,48 +1161,10 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		controller_counter++;
 		camera_counter++;
 		mag_counter++;
-		gps_counter++;
-#ifdef UAV1
-		/*
-		if(gps_counter == GPS_CLOCK_RATE) {
-			gps_counter = 0;
-			getGPSData(&gpsData);
-			EKF.gps_fixed = gpsData.ggastruct.isfixValid;
 
-			if(!home && gpsData.ggastruct.isfixValid) {
-				SetHome();
-			}
+		#ifdef UAV1
 
-			if(home) {
 
-				float lla[3];
-				float ecef[3];
-				float ecef0[3];
-
-				lla[0] = gpsData.ggastruct.lcation.latitude;
-				lla[1] = gpsData.ggastruct.lcation.longitude;
-				lla[2] = gpsData.ggastruct.alt.altitude;
-
-				lla2ecef(lla, ecef);
-				lla2ecef(lla0, ecef0);
-
-				float vned[2];
-				ecef2ned(ecef, ecef0, lla0, vned);
-
-				EKF.xned = vned[0];
-				EKF.yned = vned[1];
-				EKF.v_ground = gpsData.rmcstruct.speed * 0.514444444; //Knot to m/s
-
-				float deg2rad = M_PI/180.0;
-				EKF.vgpsxned = EKF.v_ground * cos(gpsData.rmcstruct.course * deg2rad);
-				EKF.vgpsyned = EKF.v_ground * sin(gpsData.rmcstruct.course * deg2rad);
-			}
-		}
-
-		//else {
-		//	EKF.Qgps = 400 * gpsData.ggastruct.HDOP;
-		//}
-*/
 		if(mag_counter == MAG_CLOCK_RATE) {
 			mag_counter = 0;
 			HMC5883L_getMagData(&MAG_X, &MAG_Y, &MAG_Z);
@@ -1316,13 +1252,12 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 		}
 #endif
-		//}
 
 		if(controller_counter == CONTROLLER_RATE) { //5 ms || 200 Hz
 			_controller_timer = controller_timer;
 			controller_timer = HAL_GetTick();
 			controller_timer_dif = controller_timer-_controller_timer;
-		  controller_counter = 0;
+			controller_counter = 0;
 
 
 #ifdef UAV1
@@ -1385,17 +1320,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 		  accXm *= g; accYm *= g; accZm *= g;
 
-		  //EKF.acc_vert = (accZc - 1.0)  * g;
 		  EKF.acc_vert = accZm;
-
-		  /*
-		  float ax_b = (accXc-AccXh);
-		  ax_b = ax_b - 1 * sin(deg2rad*EKF.state.angles[1]);
-		  ax_b = ax_b * cos(deg2rad*EKF.state.angles[1]);
-		  float accXm = ax_b  * g;
-		  float accYm = (accYc-AccYh)  * g;
-		  */
-
 
 		  EKF.accXm = accXm;// * deg2rad*EKF.state.angles[1];
 		  EKF.accYm = accYm;
@@ -1408,12 +1333,6 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 		  EKF.Run();
 
-/*
-		  if(sonar_alt > 5 || sonar_alt < 0.3) {
-			  Qs = 1e4;
-		  }
-*/
-
 
 		  state.angles[0]  	  = EKF.state.angles[0];
 		  state.angles[1] 	  = EKF.state.angles[1];
@@ -1422,29 +1341,18 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  state.rates[0] = EKF.state.rates[0];
 		  state.rates[1] = EKF.state.rates[1];
 		  state.rates[2] = EKF.state.rates[2];
-/*
-		  bmp.uncomp.temp = get_ut ();
-		  bmp.data.temp = get_temp (&bmp);
-		  bmp.uncomp.press = get_up (bmp.oss);
-		  bmp.data.press = get_pressure (bmp);
-		  bmp.data.altitude = get_altitude (&bmp);
-
-		  baro_alt = bmp.data.altitude; */
 
 
-		 // alpha_des = 0;
-		 // printf("roll: %d\r\n",int(roll));
+		   checkMode(ch[MOD_CH-1]);
 
-			checkMode(ch[MOD_CH-1]);
+		   controller.z_vel = EKF.vz;
+		   controller.z = EKF.alt_gnd;
 
-			controller.z_vel = EKF.vz;
-			controller.z = EKF.alt_gnd;
+		   controller.vx	 = EKF.vx;
+		   controller.x     = EKF.x;
 
-			controller.vx	 = EKF.vx;
-			controller.x     = EKF.x;
-
-			controller.vy	 = EKF.vy;
-			controller.y     = EKF.y;
+		   controller.vy	 = EKF.vy;
+		   controller.y     = EKF.y;
 
 		  controller.state = state;
 		  controller.state_des = state_des;
@@ -1493,15 +1401,12 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  state_des.rates[0] = controller.roll_rate_des;
 		  state_des.rates[1] = controller.pitch_rate_des;
 
-		  //ie_roll_sat = controller.pid_roll.ie_roll_sat;
-		 // SendTelem();
+
 		  TelemPack();
 		  CheckFailsafe();
 		  CheckSwarm();
 		  PWMYaz();
 		  SwitchMag();
-//		  NRF24_write(myTxData, 32);
-
 
 		  //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_1);
 		}
