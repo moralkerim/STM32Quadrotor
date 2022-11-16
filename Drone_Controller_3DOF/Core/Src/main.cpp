@@ -446,24 +446,49 @@ int main(void)
 
   while (1)
   {
-#ifdef UAV2
-		if(NRF24_available())
-		{
-			char nrf_buf[sizeof(struct pwm)];
-			NRF24_read(nrf_buf, sizeof(struct pwm));
+	#ifdef UAV2
+			if(NRF24_available())
+			{
+				char nrf_buf[sizeof(struct pwm)];
+				NRF24_read(nrf_buf, sizeof(struct pwm));
 
-			memcpy(&pwm_out, nrf_buf , sizeof(struct pwm));
+				memcpy(&pwm_out, nrf_buf , sizeof(struct pwm));
 
-			controller_output_2[0] = pwm_out.w1;
-			controller_output_2[1] = pwm_out.w2;
-			controller_output_2[2] = pwm_out.w3;
-			controller_output_2[3] = pwm_out.w4;
 
-			HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-			//HAL_UART_Transmit(&huart3, (uint8_t *)RxData, 32, 10);
-		}
+				//Check if the incoming data is healthy or not.
+				short unsigned int *p;
+				p = &pwm_out.w1;
 
-#endif
+				bool data_healthy = true;
+
+				for(int i=0; i<4; i++) {
+					if(*(p+i) > 2000 || *(p+i) < 1000) {
+						unsigned int val = *(p+i);
+						data_healthy = false;
+						break;
+					}
+				}
+
+				//Give healthy datas to outputs.
+				if(data_healthy) {
+					controller_output_2[0] = pwm_out.w1;
+					controller_output_2[1] = pwm_out.w2;
+					controller_output_2[2] = pwm_out.w3;
+					controller_output_2[3] = pwm_out.w4;
+				}
+
+				HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+				//HAL_UART_Transmit(&huart3, (uint8_t *)RxData, 32, 10);
+			}
+
+			else {
+				controller_output_2[0] = 1000;
+				controller_output_2[1] = 1000;
+				controller_output_2[2] = 1000;
+				controller_output_2[3] = 1000;
+			}
+
+	#endif
 
 
     /* USER CODE END WHILE */
