@@ -236,7 +236,7 @@ char myTxData[32] = "Mili Saniye!!!\r\n";
 
 
 uint64_t RxpipeAddrs = 122;
-char RxData[50];
+struct pwm pwm_out;
 
 
 /* USER CODE END PV */
@@ -260,7 +260,7 @@ void Check_Arm(void);
 void Check_Disarm(void);
 float square(float x);
 void MagCalib(int16_t MAG_X,int16_t MAG_Y,int16_t MAG_Z);
-void GPSInit();
+//void GPSInit();
 //void SetHome();
 //void SetHome2();
 void CheckFailsafe();
@@ -365,36 +365,49 @@ int main(void)
 
   HAL_UART_Receive_DMA(&huart2, (uint8_t*)ch_rcv_buf, 1);
   //HAL_UART_Receive_DMA(&huart1, rx_buffer, sizeof(cam_data)-1);
+#ifdef UAV1
   MPU6050_Baslat();
   bmp_init(&bmp);
   HMC5883L_initialize();
+#endif
   MotorBaslat();
-  GPSInit();
+  //GPSInit();
   HAL_Delay(1000);
 
   Ringbuf_init();
 
 	/***********NRF Ayarlari****************/
-/*
+
 #ifdef UAV1
-    NRF24_begin(GPIOB, CSN_Pin, CE_Pin, hspi1);
+	NRF24_begin(CE_GPIO_Port, CSN_Pin, CE_Pin, hspi1);
 	NRF24_stopListening();
 	NRF24_openWritingPipe(TxpipeAddrs);
+	nrf24_DebugUART_Init(huart3);
 	NRF24_setAutoAck(false);
 	NRF24_setChannel(34);
+	NRF24_setPayloadSize(sizeof(struct pwm));
+	char test_data[] = "Testing...";
+	HAL_UART_Transmit(&huart3, (uint8_t*)&test_data, sizeof(test_data), 5);
+	printRadioSettings();
 #endif
 
 #ifdef UAV2
-	NRF24_begin(GPIOB, CSN_Pin, CE_Pin, hspi1);
-	//nrf24_DebugUART_Init(huart1);
+	NRF24_begin(CE_GPIO_Port, CSN_Pin, CE_Pin, hspi1);
+	nrf24_DebugUART_Init(huart3);
 	NRF24_setAutoAck(false);
 	NRF24_setChannel(34);
+	NRF24_setPayloadSize(sizeof(struct pwm));
 	NRF24_openReadingPipe(1, RxpipeAddrs);
 	NRF24_startListening();
+	char test_data[] = "Testing...";
+	HAL_UART_Transmit(&huart3, (uint8_t*)&test_data, sizeof(test_data), 5);
+	printRadioSettings();
 #endif
-*/
+
   //Gyro kalibrasyon hatalarını hesapla.
   HAL_Delay(2000);
+
+#ifdef UAV1
 
   GyroXh = GyroErr(GYRO_X_ADDR); GyroYh=GyroErr(GYRO_Y_ADDR); GyroZh=GyroErr(GYRO_Z_ADDR);
   AccXh = AccErr(ACC_X_ADDR)* .0078; AccYh = AccErr(ACC_Y_ADDR)* .0078; AccZh = AccErr(ACC_Z_ADDR)* .0078;
@@ -404,7 +417,7 @@ int main(void)
   accX = AccOku(ACC_X_ADDR);
   accY = AccOku(ACC_Y_ADDR);
   accZ = AccOku(ACC_Z_ADDR);
-
+#endif
   //Kontrolcü Timer'ı
   HAL_TIM_Base_Start_IT(&htim2);
 
@@ -436,15 +449,23 @@ int main(void)
 #ifdef UAV2
 		if(NRF24_available())
 		{
-			NRF24_read(RxData, 32);
-			//HAL_UART_Transmit(&huart1, (uint8_t *)RxData, 32, 10);
+			char nrf_buf[sizeof(struct pwm)];
+			NRF24_read(nrf_buf, sizeof(struct pwm));
+
+			memcpy(&pwm_out, nrf_buf , sizeof(struct pwm));
+
+			controller_output_2[0] = pwm_out.w1;
+			controller_output_2[1] = pwm_out.w2;
+			controller_output_2[2] = pwm_out.w3;
+			controller_output_2[3] = pwm_out.w4;
+
+			HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+			//HAL_UART_Transmit(&huart3, (uint8_t *)RxData, 32, 10);
 		}
 
 #endif
 
-#ifdef UAV1
-//		NRF24_write(myTxData, 32);
-#endif
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -1406,7 +1427,16 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  CheckFailsafe();
 		  CheckSwarm();
 		  PWMYaz();
-		  SwitchMag();
+
+		#ifdef UAV1
+		  	  	//Pack motor outputs to nrf24 buffer.
+		  	  	char nrf_buf[sizeof(struct pwm)];
+		  	  	memcpy(nrf_buf,&telem_pack.pwm2,sizeof(struct pwm));
+				NRF24_write(nrf_buf, sizeof(struct pwm));
+				HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+		#endif
+
+		  //SwitchMag();
 
 		  //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_1);
 		}
