@@ -21,6 +21,7 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
+#include <Kalman.hpp>
 #include "main.h"
 #include "dma.h"
 #include "i2c.h"
@@ -38,7 +39,6 @@
 #include <math.h>
 #include "coordinates.hpp"
 
-#include "Kalman.hpp"
 #include "Controller.hpp"
 #include "TelemData.h"
 
@@ -363,7 +363,7 @@ int main(void)
 
   HAL_UART_Receive_DMA(&huart1, (uint8_t*)&cam_data, sizeof(cam_data));
 
-  HAL_UART_Receive_DMA(&huart2, (uint8_t*)ch_rcv_buf, 1);
+  //HAL_UART_Receive_DMA(&huart2, (uint8_t*)ch_rcv_buf, 1);
   //HAL_UART_Receive_DMA(&huart1, rx_buffer, sizeof(cam_data)-1);
 #ifdef UAV1
   MPU6050_Baslat();
@@ -379,6 +379,7 @@ int main(void)
 	/***********NRF Ayarlari****************/
 
 #ifdef UAV1
+
 	NRF24_begin(CE_GPIO_Port, CSN_Pin, CE_Pin, hspi1);
 	NRF24_stopListening();
 	NRF24_openWritingPipe(TxpipeAddrs);
@@ -389,6 +390,7 @@ int main(void)
 	char test_data[] = "Testing...";
 	HAL_UART_Transmit(&huart3, (uint8_t*)&test_data, sizeof(test_data), 5);
 	printRadioSettings();
+
 #endif
 
 #ifdef UAV2
@@ -557,36 +559,7 @@ void MPU6050_Baslat(void) {
 
 }
 
-#ifdef UAV2
 
-/*
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-
-	if(huart == &huart2) {
-	    char_index++;
-
-	    if (ch_rcv_buf[char_index] == 0x01 && ch_rcv_buf[char_index-1] == 0x04) {  //Start char received
-
-	      char *start_adress = ch_rcv_buf;
-	      start_adress++;
-	      memcpy(&telem, start_adress , sizeof(struct pwm));
-	      char_index = 0;
-	      inChar_ = inChar;
-	      inChar = (char)Serial.read();
-	      ToggleLED();
-
-	    }
-
-
-
-	    buf[char_index] = inChar;
-
-
-}
-
-}
-*/
-#endif
 
 void MagCalib(int16_t MAG_X,int16_t MAG_Y,int16_t MAG_Z) {
 	/*
@@ -603,12 +576,12 @@ void checkMode(int mod_ch) {
 	  if(mod_ch < 1400) {
 
 		  controller.mod = STABILIZE;
-		  controller.z0 = EKF.alt_gnd;
-		  controller.x0 = EKF.x;
-		  controller.y0 = EKF.y;
+//		  controller.z0 = EKF.alt_gnd;
+//		  controller.x0 = EKF.x;
+//		  controller.y0 = EKF.y;
 		  controller.p_alt.reset();
-		  controller.p_velx.reset();
-		  controller.p_vely.reset();
+//		  controller.p_velx.reset();
+//		  controller.p_vely.reset();
 	  }
 
 	  else if (mod_ch >=1400 && mod_ch <1700) {
@@ -791,12 +764,14 @@ void TelemPack() {
 
 	  telem_pack.ekf.roll_acc  = EKF.roll_acc;
 	  telem_pack.ekf.pitch_acc = EKF.pitch_acc;
+	  telem_pack.ekf.yaw_acc   = EKF.yaw_acc;
 
 	  telem_pack.ekf.roll_gyro  = EKF.gyro[0];
 	  telem_pack.ekf.pitch_gyro = EKF.gyro[1];
+	  telem_pack.ekf.yaw_gyro   = EKF.gyro[2];
 
-	  telem_pack.ekf.roll_comp =  EKF.roll_bias;
-	  telem_pack.ekf.pitch_comp = EKF.pitch_bias;
+	  telem_pack.ekf.roll_comp =  EKF.roll_comp;
+	  telem_pack.ekf.pitch_comp = EKF.pitch_comp;
 
 	  telem_pack.ekf.roll_ekf =  EKF.roll_ekf;
 	  telem_pack.ekf.pitch_ekf = EKF.pitch_ekf;
@@ -811,8 +786,13 @@ void TelemPack() {
 	  telem_pack.pid_pitch.D = controller.pid_pitch.D;
 	  telem_pack.pid_pitch.pd_roll_sat_buf = controller.pid_pitch.pd_roll_sat_buf;
 
-	  telem_pack.sonar_alt = EKF.sonar_alt;
-	  telem_pack.velocity_body.z = EKF.vz;
+	  telem_pack.p_yaw.P = controller.pid_yaw.P;
+	  telem_pack.p_yaw.D = controller.pid_yaw.D;
+	  telem_pack.p_yaw.I = controller.pid_yaw.I;
+	  telem_pack.p_yaw.pd_roll_sat_buf = controller.pid_yaw.pd_roll_sat_buf;
+
+	  telem_pack.sonar_alt = EKF.roll_bias;
+	  telem_pack.velocity_body.z = EKF.pitch_bias;
 	  telem_pack.position_body.z = EKF.alt_gnd;
 
 	  telem_pack.cam_data.detected = cam_data_20.detected;
@@ -821,10 +801,10 @@ void TelemPack() {
 	  telem_pack.cam_data.z_cam = cam_data_20.z_cam;
 
 
-	  telem_pack.position_body.x = EKF.x;
-	  telem_pack.velocity_body.x = EKF.vx;
-	  telem_pack.position_body.y = EKF.y;
-	  telem_pack.velocity_body.y = EKF.vy;
+//	  telem_pack.position_body.x = EKF.x;
+//	  telem_pack.velocity_body.x = EKF.vx;
+//	  telem_pack.position_body.y = EKF.y;
+//	  telem_pack.velocity_body.y = EKF.vy;
 
 	  telem_pack.alt_thr = controller.alt_thr;
 
@@ -868,6 +848,36 @@ void TelemPack() {
 	  telem_pack.pwm2.w2 = controller_output_2[1];
 	  telem_pack.pwm2.w3 = controller_output_2[2];
 	  telem_pack.pwm2.w4 = controller_output_2[3];
+
+	  telem_pack.S_roll.S11 = EKF.S11_roll;
+	  telem_pack.S_roll.S12 = EKF.S12_roll;
+	  telem_pack.S_roll.S13 = EKF.S13_roll;
+	  telem_pack.S_roll.S21 = EKF.S21_roll;
+	  telem_pack.S_roll.S22 = EKF.S22_roll;
+	  telem_pack.S_roll.S23 = EKF.S23_roll;
+	  telem_pack.S_roll.S31 = EKF.S31_roll;
+	  telem_pack.S_roll.S32 = EKF.S32_roll;
+	  telem_pack.S_roll.S33 = EKF.S33_roll;
+
+	  telem_pack.S_pitch.S11 = EKF.S11_pitch;
+	  telem_pack.S_pitch.S12 = EKF.S12_pitch;
+	  telem_pack.S_pitch.S13 = EKF.S13_pitch;
+	  telem_pack.S_pitch.S21 = EKF.S21_pitch;
+	  telem_pack.S_pitch.S22 = EKF.S22_pitch;
+	  telem_pack.S_pitch.S23 = EKF.S23_pitch;
+	  telem_pack.S_pitch.S31 = EKF.S31_pitch;
+	  telem_pack.S_pitch.S32 = EKF.S32_pitch;
+	  telem_pack.S_pitch.S33 = EKF.S33_pitch;
+
+	  telem_pack.S_yaw.S11 = EKF.S11_yaw;
+	  telem_pack.S_yaw.S12 = EKF.S12_yaw;
+	  telem_pack.S_yaw.S13 = EKF.S13_yaw;
+	  telem_pack.S_yaw.S21 = EKF.S21_yaw;
+	  telem_pack.S_yaw.S22 = EKF.S22_yaw;
+	  telem_pack.S_yaw.S23 = EKF.S23_yaw;
+	  telem_pack.S_yaw.S31 = EKF.S31_yaw;
+	  telem_pack.S_yaw.S32 = EKF.S32_yaw;
+	  telem_pack.S_yaw.S33 = EKF.S33_yaw;
 
 	  memcpy(buf,&telem_pack,sizeof(telem_pack));
 }
@@ -924,8 +934,8 @@ float pwm2ang(unsigned short int pwm) {
 	int in_min  = 1160;
 	int in_max  = 1850;
 	*/
-	int out_min = -20;
-	int out_max  = 20;
+	int out_min = -30;
+	int out_max  = 30;
 	unsigned short int pwm_out;
 
 	if(pwm > 1500 - dead_zone && pwm < 1500 + dead_zone) {
@@ -1370,8 +1380,8 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 		  EKF.accXm = accXm;// * deg2rad*EKF.state.angles[1];
 		  EKF.accYm = accYm;
-		  EKF.acc_pos_x = accXm;
-		  EKF.acc_pos_y = -accYm;
+//		  EKF.acc_pos_x = accXm;
+//		  EKF.acc_pos_y = -accYm;
 
 		  EKF.sonar_alt = sonar_alt;
 		  EKF.baro_alt = baro_alt;
@@ -1394,11 +1404,11 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		   controller.z_vel = EKF.vz;
 		   controller.z = EKF.alt_gnd;
 
-		   controller.vx	 = EKF.vx;
-		   controller.x     = EKF.x;
-
-		   controller.vy	 = EKF.vy;
-		   controller.y     = EKF.y;
+//		   controller.vx	 = EKF.vx;
+//		   controller.x     = EKF.x;
+//
+//		   controller.vy	 = EKF.vy;
+//		   controller.y     = EKF.y;
 
 		  controller.state = state;
 		  controller.state_des = state_des;
@@ -1453,13 +1463,13 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  CheckSwarm();
 		  PWMYaz();
 
-		#ifdef UAV1
-		  	  	//Pack motor outputs to nrf24 buffer.
-		  	  	char nrf_buf[sizeof(struct pwm)];
-		  	  	memcpy(nrf_buf,&telem_pack.pwm2,sizeof(struct pwm));
-				NRF24_write(nrf_buf, sizeof(struct pwm));
-				HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-		#endif
+//		#ifdef UAV1
+//		  	  	//Pack motor outputs to nrf24 buffer.
+//		  	  	char nrf_buf[sizeof(struct pwm)];
+//		  	  	memcpy(nrf_buf,&telem_pack.pwm2,sizeof(struct pwm));
+//				NRF24_write(nrf_buf, sizeof(struct pwm));
+//				HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+//		#endif
 
 		  //SwitchMag();
 

@@ -5,7 +5,7 @@ if(style == 't')
     plot(log_mat(:,Telem.time_millis)./1000,log_mat(:,enum));
 
 else
-    plot(log_mat(:,enum));
+    plot(log_mat(:,enum),'LineWidth',1.5);
 end
     hold on
 end

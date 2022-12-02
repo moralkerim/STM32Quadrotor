@@ -1,3 +1,9 @@
+struct S_angle {
+    float S11, S12, S13;
+    float S21, S22, S23;
+    float S31, S32, S33;
+} __attribute__ ((packed));
+
 struct attitude {
   float roll;
   float pitch;
@@ -39,9 +45,11 @@ struct velocity_body {
 struct EKF {
   float roll_acc;
   float pitch_acc;
+  float yaw_acc;
 
   float roll_gyro;
   float pitch_gyro;
+  float yaw_gyro;
 
   float roll_comp;
   float pitch_comp;
@@ -108,6 +116,11 @@ struct telem_pack {
   struct gps gps;
   struct ch ch;
   struct pwm pwm2;
+  struct PID_telem p_yaw;
+  struct S_angle S_roll;
+  struct S_angle S_pitch;
+  struct S_angle S_yaw;
+
 
 } __attribute__ ((packed));
 

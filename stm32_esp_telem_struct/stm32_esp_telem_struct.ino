@@ -49,7 +49,7 @@ size_t offset_log;
 char inChar;
 File dataFile;
 void setup() {
-  Serial.begin(512000);
+  Serial.begin(115200);
   //stmSerial.begin(9600);
   // Begin WiFi
   pinMode(LED_BUILTIN, OUTPUT);
@@ -63,7 +63,7 @@ void setup() {
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(100);
- //   Serial.print(".");
+    Serial.print(".");
   }
 
 
@@ -73,11 +73,10 @@ void setup() {
  
    
   // Connected to WiFi
-  //Serial.println();
-  //Serial.print("Connected! IP address: ");
-  //Serial.println(WiFi.localIP());
-  //memcpy(test_buf, &telem , sizeof(telem));
-  //sd_time = millis();
+  Serial.println();
+  Serial.print("Connected! IP address: ");
+  Serial.println(WiFi.localIP());
+
 }
 
 void loop() {
