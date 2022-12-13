@@ -118,6 +118,13 @@ classdef Telem < uint32
       S_yaw_31(110)
       S_yaw_32(111)
       S_yaw_33(112)
+	  
+	  bno_roll(113)
+	  bno_pitch(114)
+	  bno_yaw(115)
+	  bno_roll_rate(116)
+	  bno_pitch_rate(117)
+	  bno_yaw_rate(118)
       
    end
 end

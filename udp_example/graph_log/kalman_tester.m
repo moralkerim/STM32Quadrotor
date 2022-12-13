@@ -8,17 +8,20 @@ kalman_bias  = zeros(size,1);
 Icov_k = zeros(2,2,size);
 v_k = zeros(2,1,size);
 
-sa = 3e-1; 
-sb = 5e-2; 
+sa = 6e-3; 
+sb = 1e-3; 
 sr = 20;
 
 C = [1 0 0; 0 1 1];
 
-for i=1:size
+for i=2:size
+    ti =  log_mat(i,Telem.time_millis);
+    ti_ = log_mat(i-1,Telem.time_millis);
+    dt = (ti-ti_)/1000
     gyroY = log_mat(i,Telem.roll_gyro);
     pitch_acc = log_mat(i,Telem.roll_acc);
     [pitch_m,pitch_bias_m,rate_m,S11_m,S12_m,S21_m,S22_m,S13_m,S23_m,S31_m,S32_m,S33_m,v,Icov] = ...
-    Kalman_Filter_disc(i,pitch_m,pitch_bias_m,rate_m,gyroY,pitch_acc,S11_m,S12_m,S21_m,S22_m,S13_m,S23_m,S31_m,S32_m,S33_m);
+    Kalman_Filter_disc(i,pitch_m,pitch_bias_m,rate_m,gyroY,pitch_acc,S11_m,S12_m,S21_m,S22_m,S13_m,S23_m,S31_m,S32_m,S33_m,dt);
     kalman_pitch(i) = pitch_m;
     kalman_rate(i) = rate_m;
     kalman_bias(i) = pitch_bias_m;

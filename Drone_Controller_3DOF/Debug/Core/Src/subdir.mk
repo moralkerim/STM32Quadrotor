@@ -9,6 +9,7 @@ C_SRCS += \
 ../Core/Src/NMEA.c \
 ../Core/Src/UartRingbuffer.c \
 ../Core/Src/bmp180.c \
+../Core/Src/bno055.c \
 ../Core/Src/dma.c \
 ../Core/Src/gpio.c \
 ../Core/Src/gy-us42v2.c \
@@ -33,6 +34,7 @@ C_DEPS += \
 ./Core/Src/NMEA.d \
 ./Core/Src/UartRingbuffer.d \
 ./Core/Src/bmp180.d \
+./Core/Src/bno055.d \
 ./Core/Src/dma.d \
 ./Core/Src/gpio.d \
 ./Core/Src/gy-us42v2.d \
@@ -53,6 +55,7 @@ OBJS += \
 ./Core/Src/NMEA.o \
 ./Core/Src/UartRingbuffer.o \
 ./Core/Src/bmp180.o \
+./Core/Src/bno055.o \
 ./Core/Src/coordinates.o \
 ./Core/Src/dma.o \
 ./Core/Src/gpio.o \
@@ -84,6 +87,8 @@ Core/Src/UartRingbuffer.o: ../Core/Src/UartRingbuffer.c Core/Src/subdir.mk
 	arm-none-eabi-gcc "$<" -mcpu=cortex-m3 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F103xB -c -I../Core/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I../Drivers/CMSIS/Include -I"C:/Users/Kerim/STM32CubeIDE/STM32Quadrotor/Drone_Controller_3DOF/modular_robots/modular_ws/src/controller/include/controller" -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/UartRingbuffer.d" -MT"$@" --specs=nano.specs -mfloat-abi=soft -mthumb -o "$@"
 Core/Src/bmp180.o: ../Core/Src/bmp180.c Core/Src/subdir.mk
 	arm-none-eabi-gcc "$<" -mcpu=cortex-m3 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F103xB -c -I../Core/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I../Drivers/CMSIS/Include -I"C:/Users/Kerim/STM32CubeIDE/STM32Quadrotor/Drone_Controller_3DOF/modular_robots/modular_ws/src/controller/include/controller" -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/bmp180.d" -MT"$@" --specs=nano.specs -mfloat-abi=soft -mthumb -o "$@"
+Core/Src/bno055.o: ../Core/Src/bno055.c Core/Src/subdir.mk
+	arm-none-eabi-gcc "$<" -mcpu=cortex-m3 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F103xB -c -I../Core/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I../Drivers/CMSIS/Include -I"C:/Users/Kerim/STM32CubeIDE/STM32Quadrotor/Drone_Controller_3DOF/modular_robots/modular_ws/src/controller/include/controller" -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/bno055.d" -MT"$@" --specs=nano.specs -mfloat-abi=soft -mthumb -o "$@"
 Core/Src/coordinates.o: ../Core/Src/coordinates.cpp Core/Src/subdir.mk
 	arm-none-eabi-g++ "$<" -mcpu=cortex-m3 -std=gnu++14 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F103xB -c -I../Core/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I../Drivers/CMSIS/Include -I"C:/Users/Kerim/STM32CubeIDE/STM32Quadrotor/Drone_Controller_3DOF/modular_robots/modular_ws/src/controller/include/controller" -O0 -ffunction-sections -fdata-sections -fno-exceptions -fno-rtti -fno-use-cxa-atexit -Wall -fstack-usage -MMD -MP -MF"Core/Src/coordinates.d" -MT"$@" --specs=nano.specs -mfloat-abi=soft -mthumb -o "$@"
 Core/Src/dma.o: ../Core/Src/dma.c Core/Src/subdir.mk

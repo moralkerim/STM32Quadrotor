@@ -2,6 +2,7 @@
 "Core/Src/NMEA.o"
 "Core/Src/UartRingbuffer.o"
 "Core/Src/bmp180.o"
+"Core/Src/bno055.o"
 "Core/Src/coordinates.o"
 "Core/Src/dma.o"
 "Core/Src/gpio.o"

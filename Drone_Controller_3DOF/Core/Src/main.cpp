@@ -49,6 +49,7 @@ extern "C" {
 	#include "NMEA.h"
 	#include "moving-median.h"
 	#include "nrf24.h"
+	#include "bno055_stm32.h"
 
 }
 
@@ -82,6 +83,7 @@ extern "C" {
 #define ACC_Z_ADDR 0x3F
 */
 
+#define BMO_DEBUG
 #define MPU6050 (0x68<<1)
 #define MPU6050_POW_REG 0x3e
 #define MPU6050_DLPF_REG 0x1a
@@ -204,6 +206,7 @@ unsigned short int failsafe_counter;
 bool in_failsafe;
 float Fail_Acc;
 uint8_t period;
+bno055_vector_t v, bno_dat, bno_gyro;
 
 typedef enum {
 	POSITIVE,
@@ -365,6 +368,22 @@ int main(void)
 
   //HAL_UART_Receive_DMA(&huart2, (uint8_t*)ch_rcv_buf, 1);
   //HAL_UART_Receive_DMA(&huart1, rx_buffer, sizeof(cam_data)-1);
+#ifdef BMO_DEBUG
+  bno055_assignI2C(&hi2c1);
+  bno055_setup();
+  bno055_setOperationModeNDOF();
+  //bno055_setAxisDefualt();
+  bno055_axis_map_t axis = {
+    .x = BNO055_AXIS_Z,
+    .x_sign = BNO055_AXIS_SIGN_POSITIVE,
+    .y = BNO055_AXIS_X,
+    .y_sign = BNO055_AXIS_SIGN_POSITIVE,
+    .z = BNO055_AXIS_Y,
+    .z_sign = BNO055_AXIS_SIGN_POSITIVE
+  };
+  bno055_setAxisMap(axis);
+#endif
+
 #ifdef UAV1
   MPU6050_Baslat();
   bmp_init(&bmp);
@@ -542,13 +561,15 @@ void SystemClock_Config(void)
 void MPU6050_Baslat(void) {
 	uint8_t config = 0x00;
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, MPU6050_POW_REG, 1, &config, 1, 5); //Güç registerını aktif et
-	config = 0x18;
+	//config = 0x18; //NO DLPF
+	config = 0x1B; //42Hz DLPF
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, GYRO_CONF_REG, 1, &config, 1, 5); //Gyro 250 d/s'ye ayarlandi.
 	config = 0x00;
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)ADXL345, 0x2d, 1, &config, 1, 5); //Acc +-8g'ye ayarlandi.
 	config = 0x08;
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)ADXL345, 0x2d, 1, &config, 1, 5); //Acc +-8g'ye ayarlandi.
-	config = 0x0D;
+	//config = 0x0D;
+	config = 0x0B; //100 HZ LPF
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)ADXL345, 0x2c, 1, &config, 1, 5); //Acc +-8g'ye ayarlandi.
 	config = 0x01;
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)ADXL345, 0x31, 1, &config, 1, 5); //Acc +-8g'ye ayarlandi.
@@ -792,8 +813,8 @@ void TelemPack() {
 	  telem_pack.p_yaw.pd_roll_sat_buf = controller.pid_yaw.pd_roll_sat_buf;
 
 	  telem_pack.sonar_alt = EKF.roll_bias;
-	  telem_pack.velocity_body.z = EKF.pitch_bias;
-	  telem_pack.position_body.z = EKF.alt_gnd;
+	  telem_pack.velocity_body.z = controller.angle_ff_roll;
+	  telem_pack.position_body.z = controller.angle_ff_pitch;
 
 	  telem_pack.cam_data.detected = cam_data_20.detected;
 	  telem_pack.cam_data.x = cam_data_20.x;
@@ -879,6 +900,14 @@ void TelemPack() {
 	  telem_pack.S_yaw.S32 = EKF.S32_yaw;
 	  telem_pack.S_yaw.S33 = EKF.S33_yaw;
 
+	  telem_pack.bno_attitude.roll  = bno_dat.x;
+	  telem_pack.bno_attitude.pitch = bno_dat.y;
+	  telem_pack.bno_attitude.yaw   = bno_dat.z;
+
+	  telem_pack.bno_rates.roll  = bno_gyro.x;
+	  telem_pack.bno_rates.pitch = bno_gyro.y;
+	  telem_pack.bno_rates.yaw   = bno_gyro.z;
+
 	  memcpy(buf,&telem_pack,sizeof(telem_pack));
 }
 
@@ -934,8 +963,8 @@ float pwm2ang(unsigned short int pwm) {
 	int in_min  = 1160;
 	int in_max  = 1850;
 	*/
-	int out_min = -30;
-	int out_max  = 30;
+	int out_min = -20;
+	int out_max  = 20;
 	unsigned short int pwm_out;
 
 	if(pwm > 1500 - dead_zone && pwm < 1500 + dead_zone) {
@@ -1416,6 +1445,18 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  controller.ch2 = ch[1];
 		  controller.ch1 = ch[0];
 		  controller.Run();
+
+#ifdef BMO_DEBUG
+		  v = bno055_getVectorEuler();
+		  bno_dat.x = v.y;
+		  bno_dat.y = v.z;
+		  bno_dat.z = v.x;
+
+		  bno055_vector_t gv = bno055_getVectorGyroscope();
+		  bno_gyro.x = -gv.y;
+		  bno_gyro.y = -gv.x;
+		  bno_gyro.z =  gv.z;
+#endif
 
 		  controller_output[0] = controller.controller_output_pwm[0];
 		  controller_output[1] = controller.controller_output_pwm[1];

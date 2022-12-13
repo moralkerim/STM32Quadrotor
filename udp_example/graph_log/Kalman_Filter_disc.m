@@ -1,19 +1,20 @@
-function [pitch,pitch_bias,rate,S11,S12,S21,S22,S13,S23,S31,S32,S33,v,Icov] = Kalman_Filter_disc(i,pitch_m,pitch_bias_m,rate_m,gyroY,pitch_acc,S11_m,S12_m,S21_m,S22_m,S13_m,S23_m,S31_m,S32_m,S33_m)
-sa = 3e-1; 
-sb = 5e-2; 
+function [pitch,pitch_bias,rate,S11,S12,S21,S22,S13,S23,S31,S32,S33,v,Icov] = Kalman_Filter_disc(i,pitch_m,pitch_bias_m,rate_m,gyroY,pitch_acc,S11_m,S12_m,S21_m,S22_m,S13_m,S23_m,S31_m,S32_m,S33_m,dt)
+sa = 6e-3; 
+sb = 1e-3; 
 sr = 20;
 
-if (i<150)
+if (i<50)
    %sb = 1e-5;
+  
     Qa = 1;
     Qg = 1e-2;
 else
-    Qa = 5e4;
+    Qa = 5e3;
     Qg = 200;
 end
 
 
-dt = 0.0355;
+%dt = 0.0355;
 
 a_m = pitch_m;
 b_m  = pitch_bias_m;

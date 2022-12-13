@@ -120,6 +120,8 @@ struct telem_pack {
   struct S_angle S_roll;
   struct S_angle S_pitch;
   struct S_angle S_yaw;
+  struct attitude bno_attitude;
+  struct attitude bno_rates;
 
 
 } __attribute__ ((packed));

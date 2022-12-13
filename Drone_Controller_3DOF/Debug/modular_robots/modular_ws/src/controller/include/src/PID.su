@@ -3,18 +3,20 @@ cmath:463:3:constexpr float std::sqrt(float)	16	static
 PID.cpp:3:1:PID::PID()	32	static
 PID.cpp:5:7:float PID::P_Angle(float, float, float, float)	40	static
 PID.cpp:15:7:float PID::P_Sqrt(float, float, float)	40	static
-PID.cpp:25:7:float PID::PI_Vel(float, float, float, float, float, unsigned int)	48	static
-PID.cpp:56:7:float PID::RateFF(float)	32	static
-PID.cpp:62:7:float PID::PID_Rate2(float, float, float, float, float, float, float)	40	static
-PID.cpp:96:7:float PID::PID_Pos(float, float, float, float, float)	40	static
-PID.cpp:119:7:float PID::PD_Rate(float, float, float, float, float)	40	static
-PID.cpp:152:6:void PID::reset()	16	static
-PID.cpp:160:7:float PID::P_Rate_Yaw(float, float, float)	32	static
-PID.cpp:170:9:uint8_t PID::sgn(float)	16	static
-PID.cpp:176:8:float PID::Sat(float, int, int, int)	32	static
-PID.cpp:201:8:float PID::Sat(float, int, int)	32	static
-PID.cpp:222:7:float PID::pwm2ang(short unsigned int)	40	static
-PID.cpp:247:7:float PID::pwm2rate(short unsigned int)	32	static
-PID.cpp:263:7:float PID::pwm2mot(short unsigned int, int)	48	static
-PID.cpp:272:14:unsigned int PID::F2thr(float)	40	static
-PID.cpp:282:1:PID::~PID()	16	static
+PID.cpp:25:7:float PID::sqrt_controller(float, float, uint8_t, float)	48	static
+PID.cpp:36:7:float PID::PI_Vel(float, float, float, float, float, unsigned int)	48	static
+PID.cpp:67:7:float PID::RateFF(float)	32	static
+PID.cpp:73:7:float PID::PID_Rate2(float, float, float, float, float, float, float)	40	static
+PID.cpp:107:7:float PID::PID_Pos(float, float, float, float, float)	40	static
+PID.cpp:130:7:float PID::PD_Rate(float, float, float, float, float)	40	static
+PID.cpp:163:6:void PID::reset()	16	static
+PID.cpp:171:7:float PID::P_Rate_Yaw(float, float, float)	32	static
+PID.cpp:181:9:uint8_t PID::sgn(float)	16	static
+PID.cpp:187:8:float PID::Sat(float, int, int, int)	32	static
+PID.cpp:212:8:float PID::Sat(float, int, int)	32	static
+PID.cpp:233:7:float PID::pwm2ang(short unsigned int)	40	static
+PID.cpp:258:7:float PID::pwm2rate(short unsigned int)	32	static
+PID.cpp:274:7:float PID::pwm2mot(short unsigned int, int)	48	static
+PID.cpp:283:14:unsigned int PID::F2thr(float)	40	static
+PID.cpp:293:1:PID::~PID()	16	static
+cmath:475:5:constexpr typename __gnu_cxx::__enable_if<std::__is_integer<_Tp>::__value, double>::__type std::sqrt(_Tp) [with _Tp = int]	16	static
