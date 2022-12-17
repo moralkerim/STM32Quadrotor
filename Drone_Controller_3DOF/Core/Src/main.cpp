@@ -240,7 +240,7 @@ char myTxData[32] = "Mili Saniye!!!\r\n";
 
 uint64_t RxpipeAddrs = 122;
 struct pwm pwm_out;
-
+uint8_t gyro_conf[1];
 
 /* USER CODE END PV */
 
@@ -426,7 +426,7 @@ int main(void)
 #endif
 
   //Gyro kalibrasyon hatalarını hesapla.
-  HAL_Delay(2000);
+  HAL_Delay(5000);
 
 #ifdef UAV1
 
@@ -560,10 +560,16 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 void MPU6050_Baslat(void) {
 	uint8_t config = 0x00;
-	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, MPU6050_POW_REG, 1, &config, 1, 5); //Güç registerını aktif et
+	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, MPU6050_POW_REG, 1, &config, 1, 50); //Güç registerını aktif et
+	HAL_Delay(5);
 	//config = 0x18; //NO DLPF
-	config = 0x1B; //42Hz DLPF
-	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, GYRO_CONF_REG, 1, &config, 1, 5); //Gyro 250 d/s'ye ayarlandi.
+	config = 0x1B; //1B 42Hz DLPF || 1C 20Hz DLPF
+	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, GYRO_CONF_REG, 1, &config, 1, 50); //Gyro 250 d/s'ye ayarlandi.
+	HAL_Delay(5);
+
+
+	HAL_I2C_Mem_Read(&hi2c1, (uint16_t)MPU6050 | I2C_READ, GYRO_CONF_REG, 1, gyro_conf, 1, 5);
+
 	config = 0x00;
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)ADXL345, 0x2d, 1, &config, 1, 5); //Acc +-8g'ye ayarlandi.
 	config = 0x08;
@@ -774,7 +780,7 @@ void TelemPack() {
 
 	  telem_pack.attitude_des.roll  = controller.roll_des;
 	  telem_pack.attitude_des.pitch = controller.pitch_des;
-	  telem_pack.attitude_des.yaw   = yaw_counter;
+	  telem_pack.attitude_des.yaw   = controller.yaw_rate_des;
 
 	  telem_pack.attitude_rate.roll  = state.rates[0];
 	  telem_pack.attitude_rate.pitch = state.rates[1];
@@ -1026,29 +1032,53 @@ struct attitude DCM2Euler(int16_t acc[3], int16_t mag[3]) {
 	euler_angles.roll = rad2deg*atan(DCM32/DCM33);
 	float yaw = rad2deg*atan2(DCM21/cp,DCM11/cp);
 	//-euler_angles.yaw  = rad2deg*atan2(DCM21,DCM11);
-	if((int)yaw < -175 && (int)yaw >= -180) {
-			//yaw_sign = POSITIVE;
-		if(yaw_sign != POSITIVE && -1*EKF.gyro[2] > 0) {
+
+//	if((int)yaw < -175 && (int)yaw >= -180) {
+//			//yaw_sign = POSITIVE;
+//		if(yaw_sign != POSITIVE && -1*EKF.gyro[2] > 0) {
+//			yaw_counter++;
+//			yaw_sign = POSITIVE;
+//		}
+//
+//	}
+//	else if((int)yaw > 175 && (int)yaw <= 180) {
+//			//yaw_sign = NEGATIVE;
+//		if(yaw_sign != POSITIVE && -1*EKF.gyro[2] < 0) {
+//			yaw_counter--;
+//			yaw_sign = POSITIVE;
+//		}
+//	}
+//
+//	else if(jump_counter > 50) { //Approx 1 sec.
+//		yaw_sign = NEUTRAL;
+//		jump_counter = 0;
+//	}
+//
+//	if(yaw_sign != NEUTRAL) {
+//		jump_counter++;
+//	}
+//
+//	yaw += yaw_counter*360;
+
+	float offset = 10;
+	float bias = yaw_counter*360;
+	if((bias < EKF.yaw_ekf+180) && (EKF.yaw_ekf+180 < bias+offset) && (EKF.gyro[2]  < 0)) {
+		if(yaw_sign != POSITIVE) {
 			yaw_counter++;
 			yaw_sign = POSITIVE;
 		}
 
 	}
-	else if((int)yaw > 175 && (int)yaw <= 180) {
-			//yaw_sign = NEGATIVE;
-		if(yaw_sign != POSITIVE && -1*EKF.gyro[2] < 0) {
+
+	else if((bias+360 > EKF.yaw_ekf+180) && ((EKF.yaw_ekf+180) > (bias+360-offset)) && EKF.gyro[2] > 0) {
+		if(yaw_sign != NEGATIVE) {
 			yaw_counter--;
-			yaw_sign = POSITIVE;
+			yaw_sign = NEGATIVE;
 		}
 	}
 
-	else if(jump_counter > 50) { //Approx 1 sec.
+	else {
 		yaw_sign = NEUTRAL;
-		jump_counter = 0;
-	}
-
-	if(yaw_sign != NEUTRAL) {
-		jump_counter++;
 	}
 
 	yaw += yaw_counter*360;
@@ -1353,7 +1383,17 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  //gyroX_a_x = (GyroOku(GYRO_X_ADDR)-gyro_e_x)/14.375;
 		  //gyroX_a += gyroX_a_x * st;
 
+#ifdef BMO_DEBUG
+		  v = bno055_getVectorEuler();
+		  bno_dat.x = v.y;
+		  bno_dat.y = v.z;
+		  bno_dat.z = v.x;
 
+		  bno055_vector_t gv = bno055_getVectorGyroscope();
+		  bno_gyro.x = -gv.y;
+		  bno_gyro.y = -gv.x;
+		  bno_gyro.z =  gv.z;
+#endif
 
 		  //float gyro[3];
 		  EKF.gyro[0] = gyroX;
@@ -1425,7 +1465,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 		  state.rates[0] = EKF.state.rates[0];
 		  state.rates[1] = EKF.state.rates[1];
-		  state.rates[2] = EKF.state.rates[2];
+		  state.rates[2] = bno_gyro.z;//EKF.state.rates[2];
 
 
 		   checkMode(ch[MOD_CH-1]);
@@ -1446,17 +1486,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  controller.ch1 = ch[0];
 		  controller.Run();
 
-#ifdef BMO_DEBUG
-		  v = bno055_getVectorEuler();
-		  bno_dat.x = v.y;
-		  bno_dat.y = v.z;
-		  bno_dat.z = v.x;
 
-		  bno055_vector_t gv = bno055_getVectorGyroscope();
-		  bno_gyro.x = -gv.y;
-		  bno_gyro.y = -gv.x;
-		  bno_gyro.z =  gv.z;
-#endif
 
 		  controller_output[0] = controller.controller_output_pwm[0];
 		  controller_output[1] = controller.controller_output_pwm[1];

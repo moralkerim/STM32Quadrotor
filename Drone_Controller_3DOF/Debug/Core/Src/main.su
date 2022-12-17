@@ -16,31 +16,31 @@ main.cpp:293:6:void HAL_UART_TxCpltCallback(UART_HandleTypeDef*)	24	static
 main.cpp:329:5:int main()	136	static
 main.cpp:526:6:void SystemClock_Config()	72	static
 main.cpp:561:6:void MPU6050_Baslat()	32	static
-main.cpp:585:6:void MagCalib(int16_t, int16_t, int16_t)	24	static
-main.cpp:596:6:void checkMode(int)	16	static
-main.cpp:623:6:void SwitchMag()	16	static
-main.cpp:656:6:void CheckSwarm()	8	static
-main.cpp:681:6:void CheckFailsafe()	16	static
-main.cpp:709:6:void Check_Arm()	8	static
-main.cpp:742:6:void Check_Disarm()	8	static
-main.cpp:765:6:void TelemPack()	8	static
-main.cpp:914:6:void SendTelem()	16	static
-main.cpp:927:9:int16_t GyroOku(uint8_t)	40	static
-main.cpp:934:6:void GPSInit()	72	static
-main.cpp:956:7:float pwm2ang(short unsigned int)	40	static
-main.cpp:981:7:float pwm2rate(short unsigned int)	32	static
-main.cpp:997:9:int16_t AccOku(uint8_t)	40	static
+main.cpp:591:6:void MagCalib(int16_t, int16_t, int16_t)	24	static
+main.cpp:602:6:void checkMode(int)	16	static
+main.cpp:629:6:void SwitchMag()	16	static
+main.cpp:662:6:void CheckSwarm()	8	static
+main.cpp:687:6:void CheckFailsafe()	16	static
+main.cpp:715:6:void Check_Arm()	8	static
+main.cpp:748:6:void Check_Disarm()	8	static
+main.cpp:771:6:void TelemPack()	8	static
+main.cpp:920:6:void SendTelem()	16	static
+main.cpp:933:9:int16_t GyroOku(uint8_t)	40	static
+main.cpp:940:6:void GPSInit()	72	static
+main.cpp:962:7:float pwm2ang(short unsigned int)	40	static
+main.cpp:987:7:float pwm2rate(short unsigned int)	32	static
+main.cpp:1003:9:int16_t AccOku(uint8_t)	40	static
 cmath:475:5:constexpr typename __gnu_cxx::__enable_if<std::__is_integer<_Tp>::__value, double>::__type std::sqrt(_Tp) [with _Tp = int]	16	static
-main.cpp:1004:17:attitude DCM2Euler(int16_t*, int16_t*)	72	static
-main.cpp:1076:7:float square(float)	24	static
-main.cpp:1081:6:void PWMYaz()	4	static
-main.cpp:1162:7:float GyroErr(uint8_t)	24	static
-main.cpp:1173:7:float AccErr(uint8_t)	24	static
-main.cpp:1184:6:void MotorBaslat()	8	static
-main.cpp:1193:5:int _write(int32_t, uint8_t*, int32_t)	32	static
-main.cpp:1236:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	232	static
-main.cpp:1522:6:void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef*)	16	static
-main.cpp:1586:6:void Error_Handler()	4	static,ignoring_inline_asm
-main.cpp:1595:1:void __static_initialization_and_destruction_0(int, int)	16	static
-main.cpp:1595:1:cpp)	8	static
-main.cpp:1595:1:cpp)	8	static
+main.cpp:1010:17:attitude DCM2Euler(int16_t*, int16_t*)	80	static
+main.cpp:1106:7:float square(float)	24	static
+main.cpp:1111:6:void PWMYaz()	4	static
+main.cpp:1192:7:float GyroErr(uint8_t)	24	static
+main.cpp:1203:7:float AccErr(uint8_t)	24	static
+main.cpp:1214:6:void MotorBaslat()	8	static
+main.cpp:1223:5:int _write(int32_t, uint8_t*, int32_t)	32	static
+main.cpp:1266:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	232	static
+main.cpp:1552:6:void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef*)	16	static
+main.cpp:1616:6:void Error_Handler()	4	static,ignoring_inline_asm
+main.cpp:1625:1:void __static_initialization_and_destruction_0(int, int)	16	static
+main.cpp:1625:1:cpp)	8	static
+main.cpp:1625:1:cpp)	8	static

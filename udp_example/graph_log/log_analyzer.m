@@ -1,8 +1,8 @@
-clear all; clc
-%clc
+%clear all; clc
+clc
 
 %Example LOG
-log_str = '13.12.2022.16.56.32.txt';
+log_str = '17.12.2022.18.56.02.txt';
 
 format='(%f';
 end_format = ')';
@@ -25,7 +25,7 @@ while(~file_read)
     end
 end
 
-log_mat = log_mat(2:end,:);
+log_mat = log_mat(5:end,:);
 
 %Clean Log
 [log_mat] = clean_log(Telem.roll,log_mat,500);
@@ -38,6 +38,7 @@ log_mat = log_mat(2:end,:);
 [log_mat] = clean_log(Telem.yaw_gyro,log_mat,1000);
 [log_mat] = clean_log(Telem.yaw_rate,log_mat,1000);
 [log_mat] = clean_log(Telem.roll_comp,log_mat,1000);
+[log_mat] = clean_log(Telem.sonar_alt,log_mat,1000);
 %[log_mat] = clean_log(Telem.time_millis,log_mat,100000);
 
 %Innovations
