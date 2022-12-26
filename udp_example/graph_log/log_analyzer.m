@@ -1,8 +1,8 @@
 %clear all; clc
-clc
+clc; close all;
 
 %Example LOG
-log_str = '17.12.2022.18.56.02.txt';
+log_str = '24.12.2022.19.37.19.txt';
 
 format='(%f';
 end_format = ')';

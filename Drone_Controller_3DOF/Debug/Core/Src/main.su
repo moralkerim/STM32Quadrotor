@@ -31,16 +31,16 @@ main.cpp:962:7:float pwm2ang(short unsigned int)	40	static
 main.cpp:987:7:float pwm2rate(short unsigned int)	32	static
 main.cpp:1003:9:int16_t AccOku(uint8_t)	40	static
 cmath:475:5:constexpr typename __gnu_cxx::__enable_if<std::__is_integer<_Tp>::__value, double>::__type std::sqrt(_Tp) [with _Tp = int]	16	static
-main.cpp:1010:17:attitude DCM2Euler(int16_t*, int16_t*)	80	static
-main.cpp:1106:7:float square(float)	24	static
-main.cpp:1111:6:void PWMYaz()	4	static
-main.cpp:1192:7:float GyroErr(uint8_t)	24	static
-main.cpp:1203:7:float AccErr(uint8_t)	24	static
-main.cpp:1214:6:void MotorBaslat()	8	static
-main.cpp:1223:5:int _write(int32_t, uint8_t*, int32_t)	32	static
-main.cpp:1266:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	232	static
-main.cpp:1552:6:void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef*)	16	static
-main.cpp:1616:6:void Error_Handler()	4	static,ignoring_inline_asm
-main.cpp:1625:1:void __static_initialization_and_destruction_0(int, int)	16	static
-main.cpp:1625:1:cpp)	8	static
-main.cpp:1625:1:cpp)	8	static
+main.cpp:1010:17:attitude DCM2Euler(int16_t*, int16_t*)	72	static
+main.cpp:1064:7:float square(float)	24	static
+main.cpp:1069:6:void PWMYaz()	4	static
+main.cpp:1150:7:float GyroErr(uint8_t)	24	static
+main.cpp:1161:7:float AccErr(uint8_t)	24	static
+main.cpp:1172:6:void MotorBaslat()	8	static
+main.cpp:1181:5:int _write(int32_t, uint8_t*, int32_t)	32	static
+main.cpp:1224:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	232	static
+main.cpp:1518:6:void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef*)	16	static
+main.cpp:1582:6:void Error_Handler()	4	static,ignoring_inline_asm
+main.cpp:1591:1:void __static_initialization_and_destruction_0(int, int)	16	static
+main.cpp:1591:1:cpp)	8	static
+main.cpp:1591:1:cpp)	8	static

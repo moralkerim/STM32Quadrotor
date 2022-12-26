@@ -876,35 +876,35 @@ void TelemPack() {
 	  telem_pack.pwm2.w3 = controller_output_2[2];
 	  telem_pack.pwm2.w4 = controller_output_2[3];
 
-	  telem_pack.S_roll.S11 = EKF.S11_roll;
-	  telem_pack.S_roll.S12 = EKF.S12_roll;
-	  telem_pack.S_roll.S13 = EKF.S13_roll;
-	  telem_pack.S_roll.S21 = EKF.S21_roll;
-	  telem_pack.S_roll.S22 = EKF.S22_roll;
-	  telem_pack.S_roll.S23 = EKF.S23_roll;
-	  telem_pack.S_roll.S31 = EKF.S31_roll;
-	  telem_pack.S_roll.S32 = EKF.S32_roll;
-	  telem_pack.S_roll.S33 = EKF.S33_roll;
-
-	  telem_pack.S_pitch.S11 = EKF.S11_pitch;
-	  telem_pack.S_pitch.S12 = EKF.S12_pitch;
-	  telem_pack.S_pitch.S13 = EKF.S13_pitch;
-	  telem_pack.S_pitch.S21 = EKF.S21_pitch;
-	  telem_pack.S_pitch.S22 = EKF.S22_pitch;
-	  telem_pack.S_pitch.S23 = EKF.S23_pitch;
-	  telem_pack.S_pitch.S31 = EKF.S31_pitch;
-	  telem_pack.S_pitch.S32 = EKF.S32_pitch;
-	  telem_pack.S_pitch.S33 = EKF.S33_pitch;
-
-	  telem_pack.S_yaw.S11 = EKF.S11_yaw;
-	  telem_pack.S_yaw.S12 = EKF.S12_yaw;
-	  telem_pack.S_yaw.S13 = EKF.S13_yaw;
-	  telem_pack.S_yaw.S21 = EKF.S21_yaw;
-	  telem_pack.S_yaw.S22 = EKF.S22_yaw;
-	  telem_pack.S_yaw.S23 = EKF.S23_yaw;
-	  telem_pack.S_yaw.S31 = EKF.S31_yaw;
-	  telem_pack.S_yaw.S32 = EKF.S32_yaw;
-	  telem_pack.S_yaw.S33 = EKF.S33_yaw;
+//	  telem_pack.S_roll.S11 = EKF.S11_roll;
+//	  telem_pack.S_roll.S12 = EKF.S12_roll;
+//	  telem_pack.S_roll.S13 = EKF.S13_roll;
+//	  telem_pack.S_roll.S21 = EKF.S21_roll;
+//	  telem_pack.S_roll.S22 = EKF.S22_roll;
+//	  telem_pack.S_roll.S23 = EKF.S23_roll;
+//	  telem_pack.S_roll.S31 = EKF.S31_roll;
+//	  telem_pack.S_roll.S32 = EKF.S32_roll;
+//	  telem_pack.S_roll.S33 = EKF.S33_roll;
+//
+//	  telem_pack.S_pitch.S11 = EKF.S11_pitch;
+//	  telem_pack.S_pitch.S12 = EKF.S12_pitch;
+//	  telem_pack.S_pitch.S13 = EKF.S13_pitch;
+//	  telem_pack.S_pitch.S21 = EKF.S21_pitch;
+//	  telem_pack.S_pitch.S22 = EKF.S22_pitch;
+//	  telem_pack.S_pitch.S23 = EKF.S23_pitch;
+//	  telem_pack.S_pitch.S31 = EKF.S31_pitch;
+//	  telem_pack.S_pitch.S32 = EKF.S32_pitch;
+//	  telem_pack.S_pitch.S33 = EKF.S33_pitch;
+//
+//	  telem_pack.S_yaw.S11 = EKF.S11_yaw;
+//	  telem_pack.S_yaw.S12 = EKF.S12_yaw;
+//	  telem_pack.S_yaw.S13 = EKF.S13_yaw;
+//	  telem_pack.S_yaw.S21 = EKF.S21_yaw;
+//	  telem_pack.S_yaw.S22 = EKF.S22_yaw;
+//	  telem_pack.S_yaw.S23 = EKF.S23_yaw;
+//	  telem_pack.S_yaw.S31 = EKF.S31_yaw;
+//	  telem_pack.S_yaw.S32 = EKF.S32_yaw;
+//	  telem_pack.S_yaw.S33 = EKF.S33_yaw;
 
 	  telem_pack.bno_attitude.roll  = bno_dat.x;
 	  telem_pack.bno_attitude.pitch = bno_dat.y;
@@ -1033,55 +1033,13 @@ struct attitude DCM2Euler(int16_t acc[3], int16_t mag[3]) {
 	float yaw = rad2deg*atan2(DCM21/cp,DCM11/cp);
 	//-euler_angles.yaw  = rad2deg*atan2(DCM21,DCM11);
 
-//	if((int)yaw < -175 && (int)yaw >= -180) {
-//			//yaw_sign = POSITIVE;
-//		if(yaw_sign != POSITIVE && -1*EKF.gyro[2] > 0) {
-//			yaw_counter++;
-//			yaw_sign = POSITIVE;
-//		}
-//
-//	}
-//	else if((int)yaw > 175 && (int)yaw <= 180) {
-//			//yaw_sign = NEGATIVE;
-//		if(yaw_sign != POSITIVE && -1*EKF.gyro[2] < 0) {
-//			yaw_counter--;
-//			yaw_sign = POSITIVE;
-//		}
-//	}
-//
-//	else if(jump_counter > 50) { //Approx 1 sec.
-//		yaw_sign = NEUTRAL;
-//		jump_counter = 0;
-//	}
-//
-//	if(yaw_sign != NEUTRAL) {
-//		jump_counter++;
-//	}
-//
-//	yaw += yaw_counter*360;
-
-	float offset = 10;
-	float bias = yaw_counter*360;
-	if((bias < EKF.yaw_ekf+180) && (EKF.yaw_ekf+180 < bias+offset) && (EKF.gyro[2]  < 0)) {
-		if(yaw_sign != POSITIVE) {
-			yaw_counter++;
-			yaw_sign = POSITIVE;
-		}
-
-	}
-
-	else if((bias+360 > EKF.yaw_ekf+180) && ((EKF.yaw_ekf+180) > (bias+360-offset)) && EKF.gyro[2] > 0) {
-		if(yaw_sign != NEGATIVE) {
-			yaw_counter--;
-			yaw_sign = NEGATIVE;
-		}
-	}
-
-	else {
-		yaw_sign = NEUTRAL;
-	}
-
-	yaw += yaw_counter*360;
+    while(yaw < yaw_prev-180) {
+        yaw = yaw + 360;
+    }
+    while(yaw > yaw_prev+180) {
+        yaw = yaw - 360;
+    }
+    yaw_prev = yaw;
 	euler_angles.yaw = yaw;
 
 	/*
@@ -1277,7 +1235,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		camera_counter++;
 		mag_counter++;
 
-		#ifdef UAV1
+#ifdef UAV1
 
 
 		if(mag_counter == MAG_CLOCK_RATE) {
@@ -1385,8 +1343,8 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 #ifdef BMO_DEBUG
 		  v = bno055_getVectorEuler();
-		  bno_dat.x = v.y;
-		  bno_dat.y = v.z;
+		  bno_dat.x = v.y+3;
+		  bno_dat.y = v.z-10;
 		  bno_dat.z = v.x;
 
 		  bno055_vector_t gv = bno055_getVectorGyroscope();
@@ -1399,6 +1357,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  EKF.gyro[0] = gyroX;
 		  EKF.gyro[1] = -1*gyroY;
 		  EKF.gyro[2] = gyroZ;
+
 
 		  //İvmeölçer degerlerini oku
 
@@ -1465,8 +1424,15 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 		  state.rates[0] = EKF.state.rates[0];
 		  state.rates[1] = EKF.state.rates[1];
-		  state.rates[2] = bno_gyro.z;//EKF.state.rates[2];
+		  state.rates[2] = EKF.state.rates[2];
 
+//		  state.angles[0] = bno_dat.x;
+//		  state.angles[1] = bno_dat.y;
+//		  state.angles[2] = bno_dat.z;
+//
+//		  state.rates[0] = bno_gyro.x;
+//		  state.rates[1] = bno_gyro.y;
+//		  state.rates[2] = bno_gyro.z;
 
 		   checkMode(ch[MOD_CH-1]);
 
