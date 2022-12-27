@@ -235,13 +235,11 @@ float yaw_prev;
 
 
 uint64_t TxpipeAddrs = 122;
-char myTxData[32] = "Mili Saniye!!!\r\n";
 
 
 uint64_t RxpipeAddrs = 122;
 struct pwm pwm_out;
 uint8_t gyro_conf[1];
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -1012,6 +1010,11 @@ struct attitude DCM2Euler(int16_t acc[3], int16_t mag[3]) {
 	float rad2deg = 180.0/3.14;
 	float acctop = sqrt(acc[0]*acc[0] + acc[1]*acc[1] + acc[2]*acc[2]);
 
+//	  EKF.ekf_update = false;
+//	  if((0.0078*acctop > 1-EKF.kalman_acc_thres) && (0.0078*acctop < 1+EKF.kalman_acc_thres)) {
+//		  EKF.ekf_update = true;
+//	  }
+
 	//float A = (acctop*sqrt(square(acc[0]*mag[1] - acc[1]*mag[0]) + square(acc[0]*mag[2] - acc[2]*mag[0]) + square(acc[1]*mag[2] - acc[2]*mag[1])));
 	//float DCM11 = (mag[0]*acc[1]*acc[1] - acc[0]*mag[1]*acc[1] + mag[0]*acc[2]*acc[2] - acc[0]*mag[2]*acc[2])/A;
 	float DCM11 = (mag[0]*acc[1]*acc[1] - acc[0]*mag[1]*acc[1] + mag[0]*acc[2]*acc[2] - acc[0]*mag[2]*acc[2])/(acctop*sqrt(square(acc[0]*mag[1] - acc[1]*mag[0]) + square(acc[0]*mag[2] - acc[2]*mag[0]) + square(acc[1]*mag[2] - acc[2]*mag[1])));
@@ -1033,12 +1036,31 @@ struct attitude DCM2Euler(int16_t acc[3], int16_t mag[3]) {
 	float yaw = rad2deg*atan2(DCM21/cp,DCM11/cp);
 	//-euler_angles.yaw  = rad2deg*atan2(DCM21,DCM11);
 
-    while(yaw < yaw_prev-180) {
-        yaw = yaw + 360;
-    }
-    while(yaw > yaw_prev+180) {
-        yaw = yaw - 360;
-    }
+	//EKF.yaw_update_enable = true;
+	//float yaw_ekf = EKF.state.angles[2];
+//    while(yaw_ekf < yaw_prev-180) {
+//        yaw = yaw + 360;
+//        yaw_ekf = yaw_ekf + 360;
+//        //EKF.yaw_update_enable = false;
+//    }
+//    while(yaw_ekf > yaw_prev+180) {
+//        yaw = yaw - 360;
+//        yaw_ekf = yaw_ekf - 360;
+//        //EKF.yaw_update_enable = false;
+//
+//    }
+
+	float threshold = 200;
+	// Check if the yaw angle has crossed the discontinuity
+	if (abs(yaw - yaw_prev) > threshold) {
+	  // Add or subtract 2*pi to the yaw angle to bring it back into the range (-pi, pi)
+	  if (yaw > yaw_prev)
+		yaw -= 2*180;
+	  else
+		yaw += 2*180;
+
+	// Store the current yaw angle for the next iteration
+	}
     yaw_prev = yaw;
 	euler_angles.yaw = yaw;
 
@@ -1379,6 +1401,8 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  EKF.acc[2] = accZ;// - AccZh;
 
 		  //float acctop=sqrt(accX*accX+accY*accY+accZ*accZ);		//Toplam ivme
+		  //Check if healty acc
+
 		 // pitch_acc=asin(accY/acctop)*57.324;					//İvme ölçerden hesaplanan pitch açısı
 
 		  float g = 9.81;

@@ -2,7 +2,7 @@
 clc; close all;
 
 %Example LOG
-log_str = '24.12.2022.19.37.19.txt';
+log_str = '24.12.2022.18.23.09.txt';
 
 format='(%f';
 end_format = ')';
