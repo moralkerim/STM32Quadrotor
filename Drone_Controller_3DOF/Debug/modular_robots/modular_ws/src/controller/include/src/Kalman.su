@@ -5,8 +5,8 @@ cmath:463:3:constexpr float std::sqrt(float)	16	static
 Kalman.cpp:5:1:Kalman_Filtresi::Kalman_Filtresi()	32	static
 Kalman.cpp:8:6:void Kalman_Filtresi::PredictUpdatePos(pos_axis)	176	static
 Kalman.cpp:194:6:void Kalman_Filtresi::EKF_Pos()	16	static
-Kalman.cpp:234:6:void Kalman_Filtresi::EKF_Attitude(euler_angle, bool)	152	static
-Kalman.cpp:472:6:void Kalman_Filtresi::EKF_Alt()	72	static
-Kalman.cpp:581:6:void Kalman_Filtresi::NED2Body()	48	static
-Kalman.cpp:620:6:void Kalman_Filtresi::Run()	16	static
-Kalman.cpp:681:1:Kalman_Filtresi::~Kalman_Filtresi()	16	static
+Kalman.cpp:234:6:void Kalman_Filtresi::EKF_Attitude(euler_angle, bool)	184	static
+Kalman.cpp:465:6:void Kalman_Filtresi::EKF_Alt()	72	static
+Kalman.cpp:574:6:void Kalman_Filtresi::NED2Body()	48	static
+Kalman.cpp:613:6:void Kalman_Filtresi::Run()	16	static
+Kalman.cpp:674:1:Kalman_Filtresi::~Kalman_Filtresi()	16	static

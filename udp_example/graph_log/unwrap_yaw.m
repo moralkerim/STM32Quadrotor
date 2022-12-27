@@ -1,6 +1,6 @@
 function yaw_warped = unwrap_yaw(enum,log_mat)
   % Define a threshold value that determines when the angle has crossed the discontinuity
-  threshold = 200;
+  threshold = 130;
   size = length(log_mat(:,enum));
   yaw_warped = log_mat(:,enum);
 
