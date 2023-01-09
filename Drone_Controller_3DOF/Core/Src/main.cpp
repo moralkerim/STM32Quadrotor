@@ -229,10 +229,14 @@ TX_TYPE tx_type = start;
 SWARM_MODE swarm_mode = NORMAL;
 
 sign yaw_sign = NEUTRAL;
-int8_t yaw_counter;
+uint8_t yaw_counter;
 uint16_t jump_counter;
 float yaw_prev;
-
+float yaw_comp, yaw_comp_prev, yaw_unwrapped, yaw_unwrapped_prev, yaw_hit;
+double yaw_threshold = 7;
+int jump = 0;
+int jump_count = 0;
+double jump_val;
 
 uint64_t TxpipeAddrs = 122;
 
@@ -267,6 +271,10 @@ void MagCalib(int16_t MAG_X,int16_t MAG_Y,int16_t MAG_Z);
 void CheckFailsafe();
 void CheckSwarm();
 void SwitchMag();
+float comp_filter(float angle_prev, float rate, float angle_acc, bool armed);
+float unwrap_yaw(float yaw,float yaw_prev);
+double unwrap_yaw2(float yaw,float yaw_prev);
+float check_yaw(float yaw, float yaw_prev);
 struct attitude DCM2Euler(int16_t acc[3], int16_t mag[3]);
 int _write(int32_t file, uint8_t *ptr, int32_t len);
 /* USER CODE END PFP */
@@ -466,6 +474,8 @@ int main(void)
   while (1)
   {
 	#ifdef UAV2
+	 		bool data_healthy;
+
 			if(NRF24_available())
 			{
 				char nrf_buf[sizeof(struct pwm)];
@@ -478,7 +488,7 @@ int main(void)
 				short unsigned int *p;
 				p = &pwm_out.w1;
 
-				bool data_healthy = true;
+				data_healthy = true;
 
 				for(int i=0; i<4; i++) {
 					if(*(p+i) > 2000 || *(p+i) < 1000) {
@@ -489,16 +499,19 @@ int main(void)
 				}
 
 				//Give healthy datas to outputs.
-				if(data_healthy) {
-					controller_output_2[0] = pwm_out.w1;
-					controller_output_2[1] = pwm_out.w2;
-					controller_output_2[2] = pwm_out.w3;
-					controller_output_2[3] = pwm_out.w4;
-				}
 
-				HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 				//HAL_UART_Transmit(&huart3, (uint8_t *)RxData, 32, 10);
 			}
+
+			if(data_healthy) {
+				controller_output_2[0] = pwm_out.w1;
+				controller_output_2[1] = pwm_out.w2;
+				controller_output_2[2] = pwm_out.w3;
+				controller_output_2[3] = pwm_out.w4;
+				HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+
+			}
+
 
 			else {
 				controller_output_2[0] = 1000;
@@ -789,13 +802,13 @@ void TelemPack() {
 
 	  telem_pack.ekf.roll_acc  = EKF.roll_acc;
 	  telem_pack.ekf.pitch_acc = EKF.pitch_acc;
-	  telem_pack.ekf.yaw_acc   = EKF.yaw_acc;
+	  telem_pack.ekf.yaw_acc   = yaw_unwrapped;
 
 	  telem_pack.ekf.roll_gyro  = EKF.gyro[0];
 	  telem_pack.ekf.pitch_gyro = EKF.gyro[1];
 	  telem_pack.ekf.yaw_gyro   = EKF.gyro[2];
 
-	  telem_pack.ekf.roll_comp =  EKF.roll_comp;
+	  telem_pack.ekf.roll_comp =  yaw_comp;
 	  telem_pack.ekf.pitch_comp = EKF.pitch_comp;
 
 	  telem_pack.ekf.roll_ekf =  EKF.roll_ekf;
@@ -957,6 +970,86 @@ void GPSInit() {
 
 }
 
+float comp_filter(float angle_prev, float rate, float angle_acc, bool armed) {
+	float angle_comp;
+	float st = 0.005;
+	if(armed) {
+		angle_comp=(rate*st+angle_prev)*0.95+angle_acc*0.05;
+	}
+	else {
+		angle_comp=angle_acc;
+	}
+	return angle_comp;
+}
+
+float check_yaw(float yaw, float yaw_prev) {
+	int threshold = 5e2; float st = 0.005;
+	float yaw_sat;
+	if(abs(yaw-yaw_prev)/st > threshold) {
+		yaw_counter = 0;
+		yaw_hit = yaw;
+	}
+
+
+	if(yaw_counter < 400) {
+		yaw_sat = yaw_hit;
+		yaw_counter++;
+	}
+
+	else {
+		yaw_sat = yaw;
+	}
+
+
+	return yaw_sat;
+}
+
+float unwrap_yaw(float yaw,float yaw_prev) {
+	float threshold = 180;
+	float yaw_unwrapped;
+	// Check if the yaw angle has crossed the discontinuity
+	if (abs(yaw - yaw_prev) > threshold) {
+	  // Add or subtract 2*pi to the yaw angle to bring it back into the range (-pi, pi)
+	  if (yaw > yaw_prev)
+		  yaw_unwrapped = yaw - 2*180;
+	  else
+		  yaw_unwrapped = yaw + 2*180;
+
+	// Store the current yaw angle for the next iteration
+	}
+    //yaw_prev = yaw;
+    return yaw_unwrapped;
+}
+
+
+double unwrap_yaw2(float yaw,float yaw_prev) {
+double yaw_warped;
+
+      // Check if the yaw angle has crossed the discontinuity
+      if (!jump) {
+          yaw_warped = yaw + jump_count*360;
+          if (abs(yaw - yaw_prev) > yaw_threshold) {
+                jump = 1;
+                jump_val = yaw_prev;
+          }
+      } else {
+          if (abs(yaw) > 140) {
+                jump = 0;
+                if (yaw > jump_val) {
+                  jump_count = jump_count-1;
+                } else {
+                  jump_count = jump_count+1;
+                }
+                yaw_warped = yaw + jump_count*360;
+          } else {
+                yaw_warped = jump_val;
+          }
+      }
+
+      return yaw_warped;
+}
+
+
 float pwm2ang(unsigned short int pwm) {
 	int dead_zone = 5;
 
@@ -1036,49 +1129,10 @@ struct attitude DCM2Euler(int16_t acc[3], int16_t mag[3]) {
 	float yaw = rad2deg*atan2(DCM21/cp,DCM11/cp);
 	//-euler_angles.yaw  = rad2deg*atan2(DCM21,DCM11);
 
-	//EKF.yaw_update_enable = true;
-	//float yaw_ekf = EKF.state.angles[2];
-//    while(yaw_ekf < yaw_prev-180) {
-//        yaw = yaw + 360;
-//        yaw_ekf = yaw_ekf + 360;
-//        //EKF.yaw_update_enable = false;
-//    }
-//    while(yaw_ekf > yaw_prev+180) {
-//        yaw = yaw - 360;
-//        yaw_ekf = yaw_ekf - 360;
-//        //EKF.yaw_update_enable = false;
-//
-//    }
 
-	float threshold = 200;
-	// Check if the yaw angle has crossed the discontinuity
-	if (abs(yaw - yaw_prev) > threshold) {
-	  // Add or subtract 2*pi to the yaw angle to bring it back into the range (-pi, pi)
-	  if (yaw > yaw_prev)
-		yaw -= 2*180;
-	  else
-		yaw += 2*180;
 
-	// Store the current yaw angle for the next iteration
-	}
-    yaw_prev = yaw;
 	euler_angles.yaw = yaw;
 
-	/*
-	switch(yaw_sign) {
-		case POSITIVE:
-			euler_angles.yaw += 360;
-			break;
-		case NEGATIVE:
-			euler_angles.yaw -=360;
-			break;
-	}
-*/
-	//euler_angles.yaw = (atan2((float) mag[1], (float) mag[0]) * 180 / M_PI);
-	//yaw = acos(yaw);
-	//euler_angles.pitch  = rad2deg*pitch;
-	//euler_angles.roll   = rad2deg*roll;
-	//euler_angles.yaw    = rad2deg*yaw;
 	return euler_angles;
 
 }
@@ -1275,6 +1329,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 			acc[2] = accZ;
 			euler_angles = DCM2Euler(acc, mag);
 
+
 		}
 
 		if(camera_counter == 40) {
@@ -1437,6 +1492,11 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 		  EKF.sonar_alt = sonar_alt;
 		  EKF.baro_alt = baro_alt;
+
+//		  yaw_comp_prev = yaw_comp;
+//		  yaw_comp = comp_filter(yaw_comp_prev, gyroZ, -1*euler_angles.yaw, EKF.armed);
+//		  if(EKF.armed)
+//			  yaw_unwrapped = unwrap_yaw2(yaw_comp, yaw_comp_prev);
 		  EKF.yaw_acc  = -1*euler_angles.yaw;
 
 		  EKF.Run();
@@ -1524,13 +1584,13 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  CheckSwarm();
 		  PWMYaz();
 
-//		#ifdef UAV1
-//		  	  	//Pack motor outputs to nrf24 buffer.
-//		  	  	char nrf_buf[sizeof(struct pwm)];
-//		  	  	memcpy(nrf_buf,&telem_pack.pwm2,sizeof(struct pwm));
-//				NRF24_write(nrf_buf, sizeof(struct pwm));
-//				HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-//		#endif
+		#ifdef UAV1
+		  	  	//Pack motor outputs to nrf24 buffer.
+		  	  	char nrf_buf[sizeof(struct pwm)];
+		  	  	memcpy(nrf_buf,&telem_pack.pwm2,sizeof(struct pwm));
+				NRF24_write(nrf_buf, sizeof(struct pwm));
+				HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+		#endif
 
 		  //SwitchMag();
 
