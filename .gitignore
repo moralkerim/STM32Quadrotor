@@ -1,4 +1,9 @@
 .metadata/
+*.txt
+*.elf
+*.bin
+*.su
+*.map
 
 # Prerequisites
 *.d
@@ -33,6 +38,4 @@
 *.out
 *.app
 
-*.txt
-*.elf
-*.bin
+

@@ -18,7 +18,7 @@
 
 
 //LAB
-IPAddress server_ip(192, 168, 1, 36);
+IPAddress server_ip(192, 168, 1, 35);
 //192.168.43.152
 
 //Phone

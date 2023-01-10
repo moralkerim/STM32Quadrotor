@@ -1,4 +1,0 @@
-cmath:184:3:constexpr float std::cos(float)	16	static
-Controller.cpp:5:1:Controller::Controller()	32	static
-Controller.cpp:7:6:void Controller::Run()	96	static
-Controller.cpp:234:1:Controller::~Controller()	16	static
