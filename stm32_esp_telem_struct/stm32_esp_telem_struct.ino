@@ -16,8 +16,12 @@
 #define WIFI_SSID "Ecospark_2.4GHz"
 #define WIFI_PASS "Jasperkid1213"
 
+//#define WIFI_SSID "Kerim"
+//#define WIFI_PASS "wikiboy123"
+
 
 //LAB
+//
 IPAddress server_ip(192, 168, 1, 35);
 //192.168.43.152
 

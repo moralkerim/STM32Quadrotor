@@ -1,8 +1,9 @@
 %clear all; clc
 clc; close all;
 
-%Example LOG
-log_str = '10.01.2023.15.48.32.txt';
+%18.01.2023.14.05.47.txt düşüş logu
+%19.01.2023.13.52.24.txt zeytinlik
+log_str = '19.01.2023.15.22.33.txt';
 
 format='(%f';
 end_format = ')';
@@ -55,3 +56,7 @@ roll = log_mat(:,Telem.roll);
 roll_acc = log_mat(:,Telem.roll_acc);
 roll_bias = log_mat(:,Telem.sonar_alt);
 v_roll = roll_acc-roll;
+e_roll = log_mat(:,Telem.roll_des) - log_mat(:,Telem.roll);
+e_roll_rate = log_mat(:,Telem.roll_des_rate) - log_mat(:,Telem.roll_rate);
+angle_ff_roll = log_mat(:,Telem.vz);
+bno_e_roll = log_mat(:,Telem.roll_des) - log_mat(:,Telem.bno_roll);
