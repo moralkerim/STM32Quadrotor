@@ -130,13 +130,15 @@ extern "C" {
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-const float Sx = -0.0030;
-const float Sy = -0.0055;
-const float Sz =  -0.0254;
+const float ACC_SCALE = 3.9/1000; //10-bit, 2g
 
-const float bx = -0.4900;
-const float by = -1.1850+14;
-const float bz = 3.2050;
+const float Sx = 1.0134;
+const float Sy = 1.0326;
+const float Sz = 1.0663;
+
+const float bx = -0.3500;
+const float by = 0.1000;
+const float bz = 0.9000;
 
 float gyroX, gyroY, gyroZ, accX, accY, accZ;
 float accXc, accYc, accZc;
@@ -437,7 +439,7 @@ int main(void)
 #ifdef UAV1
 
   GyroXh = GyroErr(GYRO_X_ADDR); GyroYh=GyroErr(GYRO_Y_ADDR); GyroZh=GyroErr(GYRO_Z_ADDR);
-  AccXh = AccErr(ACC_X_ADDR)* .0078; AccYh = AccErr(ACC_Y_ADDR)* .0078; AccZh = AccErr(ACC_Z_ADDR)* .0078;
+  AccXh = AccErr(ACC_X_ADDR)* ACC_SCALE; AccYh = AccErr(ACC_Y_ADDR)*ACC_SCALE; AccZh = AccErr(ACC_Z_ADDR)*ACC_SCALE;
 
   //İvmeölçer degerlerini oku
 
@@ -574,12 +576,12 @@ void MPU6050_Baslat(void) {
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, MPU6050_POW_REG, 1, &config, 1, 50); //Güç registerını aktif et
 	HAL_Delay(5);
 	//config = 0x18; //NO DLPF
-	config = 0x1B; //1B 42Hz DLPF || 1C 20Hz DLPF
+	config = 0x1C; //1B 42Hz DLPF || 1C 20Hz DLPF
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, GYRO_CONF_REG, 1, &config, 1, 50); //Gyro 250 d/s'ye ayarlandi.
 	HAL_Delay(5);
 
 
-	HAL_I2C_Mem_Read(&hi2c1, (uint16_t)MPU6050 | I2C_READ, GYRO_CONF_REG, 1, gyro_conf, 1, 5);
+	//HAL_I2C_Mem_Read(&hi2c1, (uint16_t)MPU6050 | I2C_READ, GYRO_CONF_REG, 1, gyro_conf, 1, 5);
 
 	config = 0x00;
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)ADXL345, 0x2d, 1, &config, 1, 5); //Acc +-8g'ye ayarlandi.
@@ -588,7 +590,7 @@ void MPU6050_Baslat(void) {
 	//config = 0x0D;
 	config = 0x0B; //100 HZ LPF
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)ADXL345, 0x2c, 1, &config, 1, 5); //Acc +-8g'ye ayarlandi.
-	config = 0x01;
+	config = 0x00; //0x01 4g, 0x00 2g,
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)ADXL345, 0x31, 1, &config, 1, 5); //Acc +-8g'ye ayarlandi.
 
 	//config = 0x04; //0x04
@@ -737,6 +739,7 @@ void Check_Arm() {
 					controller.pid_yaw.reset();
 					armed = true;
 					EKF.armed = true;
+					GyroXh = GyroErr(GYRO_X_ADDR); GyroYh=GyroErr(GYRO_Y_ADDR); GyroZh=GyroErr(GYRO_Z_ADDR);
 					//SetHome2();
 					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
 
@@ -800,8 +803,9 @@ void TelemPack() {
 	  telem_pack.attitude_rate_des.roll =  state_des.rates[0];
 	  telem_pack.attitude_rate_des.pitch = state_des.rates[1];
 
-	  telem_pack.ekf.roll_acc  = EKF.roll_acc;
-	  telem_pack.ekf.pitch_acc = EKF.pitch_acc;
+	  float rad2deg = 180/M_PI;
+	  telem_pack.ekf.roll_acc  = EKF.roll_acc*rad2deg;
+	  telem_pack.ekf.pitch_acc = EKF.pitch_acc*rad2deg;
 	  telem_pack.ekf.yaw_acc   = yaw_unwrapped;
 
 	  telem_pack.ekf.roll_gyro  = EKF.gyro[0];
@@ -850,7 +854,7 @@ void TelemPack() {
 
 	  telem_pack.acc.x = accXc;
 	  telem_pack.acc.y = accYc;
-	  telem_pack.acc.z = accZm;
+	  telem_pack.acc.z = accZc;
 
 	  telem_pack.mag.x = MAG_X_CALIB;
 	  telem_pack.mag.y = MAG_Y_CALIB;
@@ -1442,51 +1446,58 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  accY = AccOku(ACC_Y_ADDR);
 		  accZ = AccOku(ACC_Z_ADDR);
 
-		  accX = (1+Sx) * accX + bx;
-		  accY = (1+Sy) * accY + by;
-		  accZ = (1+Sz) * accZ + bz;
+//		  accX = (1+Sx) * accX + bx;
+//		  accY = (1+Sy) * accY + by;
+//		  accZ = (1+Sz) * accZ + bz;
 
-		  accXc = (float)accX* 0.0078;
-		  accYc = (float)accY* 0.0078;
-		  accZc = (float)accZ* 0.0078;
+
+		  float g = 9.81;
+		  //m/s^2
+		  accXc = (float)accX* ACC_SCALE*g;
+		  accYc = (float)accY* ACC_SCALE*g;
+		  accZc = (float)accZ* ACC_SCALE*g;
+
+		  accXc = Sx * (accXc - bx);
+		  accYc = Sy * (accYc - by);
+		  accZc = Sz * (accZc - bz);
 
 		  //float acc[3];
-		  EKF.acc[0] = accX;// - AccXh;
-		  EKF.acc[1] = accY;// - AccYh;
-		  EKF.acc[2] = accZ;// - AccZh;
+		  EKF.acc[0] = accXc;// - AccXh;
+		  EKF.acc[1] = accYc;// - AccYh;
+		  EKF.acc[2] = accZc;// - AccZh;
 
 		  //float acctop=sqrt(accX*accX+accY*accY+accZ*accZ);		//Toplam ivme
 		  //Check if healty acc
 
 		 // pitch_acc=asin(accY/acctop)*57.324;					//İvme ölçerden hesaplanan pitch açısı
 
-		  float g = 9.81;
+
 		  float roll_r  = deg2rad*EKF.state.angles[0];
 		  float pitch_r = deg2rad*EKF.state.angles[1];
 
 		  //g body components, Without * g
-		  float gx = sin(pitch_r);
-		  float gy = cos(pitch_r)*sin(roll_r);
-		  float gz = cos(roll_r)*cos(pitch_r);
+//		  float gx = sin(pitch_r);
+//		  float gy = cos(pitch_r)*sin(roll_r);
+//		  float gz = cos(roll_r)*cos(pitch_r);
 
 
 
-		  accXc -= gx;
-		  accYc -= gy;
-		  accZc -= gz;
-
-		  //Body to Local
-		  accXm = accXc*cos(pitch_r) - accZc*cos(roll_r)*sin(pitch_r) - accYc*sin(roll_r)*sin(pitch_r);
-		  accYm = accYc*cos(roll_r) - accZc*sin(roll_r);
-		  accZm = accZc*cos(roll_r)*cos(pitch_r) + accXc*sin(pitch_r) + accYc*cos(pitch_r)*sin(roll_r);
-
-
-		  accXm *= g; accYm *= g; accZm *= g;
-
-		  EKF.acc_vert = accZm;
-
-		  EKF.accXm = accXm;// * deg2rad*EKF.state.angles[1];
-		  EKF.accYm = accYm;
+//		  accXc -= gx;
+//		  accYc -= gy;
+//		  accZc -= gz;
+//
+//		  //Body to Local
+//		  accXm = accXc*cos(pitch_r) - accZc*cos(roll_r)*sin(pitch_r) - accYc*sin(roll_r)*sin(pitch_r);
+//		  accYm = accYc*cos(roll_r) - accZc*sin(roll_r);
+//		  accZm = accZc*cos(roll_r)*cos(pitch_r) + accXc*sin(pitch_r) + accYc*cos(pitch_r)*sin(roll_r);
+//
+//
+//		  accXm *= g; accYm *= g; accZm *= g;
+//
+//		  EKF.acc_vert = accZm;
+//
+//		  EKF.accXm = accXm;// * deg2rad*EKF.state.angles[1];
+//		  EKF.accYm = accYm;
 //		  EKF.acc_pos_x = accXm;
 //		  EKF.acc_pos_y = -accYm;
 
@@ -1498,6 +1509,14 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 //		  if(EKF.armed)
 //			  yaw_unwrapped = unwrap_yaw2(yaw_comp, yaw_comp_prev);
 		  EKF.yaw_acc  = -1*euler_angles.yaw;
+		  float acctop=sqrt(accXc*accXc+accYc*accYc+accZc*accZc);		//Toplam ivme
+		  if(acctop < (1+EKF.kalman_acc_thres) * g && acctop > (1-EKF.kalman_acc_thres) * g) {
+			  EKF.ekf_update = true;
+		  }
+
+		  else {
+			  EKF.ekf_update = false;
+		  }
 
 		  EKF.Run();
 

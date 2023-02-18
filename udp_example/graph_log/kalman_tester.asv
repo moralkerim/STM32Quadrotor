@@ -43,7 +43,7 @@ for i=2:size
     acctop = sqrt(accX^2 + accY^2 + accZ^2);
 
     %roll_acc = rad2deg(atan(accY/accZ));
-    roll_acc = (asin(accY/g));
+    roll_acc = (atan(accY/g));
     if(acctop < (1+kalman_acc_thres) * g && acctop > (1-kalman_acc_thres) * g)
         update_enable = 1;
     else
@@ -86,7 +86,6 @@ for i=2:size
 %     S(3,3,i) = S33_m;
     
 end
-figure;
 if(LOG_TYPE == 0)
     plot(ATT(:,3)); hold on
 else
@@ -95,11 +94,6 @@ end
 plot(rad2deg(kalman_roll)); hold on
 legend('ATT','kalman');
 fprintf("dt: %.4f\n", dt_mean/(size-1));
-figure;
-%plot(bias_mm300); hold on
-plot(rad2deg(kalman_bias)); hold on
-plot(bias_log); hold on;
-legend('ATT','kalman', 'log');
 %yyaxis right;
 %plot(rad2deg(roll_comp));
 
