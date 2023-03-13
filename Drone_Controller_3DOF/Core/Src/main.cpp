@@ -130,8 +130,8 @@ extern "C" {
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-const float ACC_SCALE = 3.9/1000; //10-bit, 2g
-
+//const float ACC_SCALE = 3.9/1000; //10-bit, 2g
+const float ACC_SCALE = 7.8/1000; //10-bit, 4g
 const float Sx = 1.0134;
 const float Sy = 1.0326;
 const float Sz = 1.0663;
@@ -584,13 +584,13 @@ void MPU6050_Baslat(void) {
 	//HAL_I2C_Mem_Read(&hi2c1, (uint16_t)MPU6050 | I2C_READ, GYRO_CONF_REG, 1, gyro_conf, 1, 5);
 
 	config = 0x00;
-	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)ADXL345, 0x2d, 1, &config, 1, 5); //Acc +-8g'ye ayarlandi.
+	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)ADXL345, 0x2d, 1, &config, 1, 5);
 	config = 0x08;
-	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)ADXL345, 0x2d, 1, &config, 1, 5); //Acc +-8g'ye ayarlandi.
+	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)ADXL345, 0x2d, 1, &config, 1, 5);
 	//config = 0x0D;
 	config = 0x0B; //100 HZ LPF
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)ADXL345, 0x2c, 1, &config, 1, 5); //Acc +-8g'ye ayarlandi.
-	config = 0x00; //0x01 4g, 0x00 2g,
+	config = 0x01; //0x01 4g, 0x00 2g,
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)ADXL345, 0x31, 1, &config, 1, 5); //Acc +-8g'ye ayarlandi.
 
 	//config = 0x04; //0x04
@@ -1461,6 +1461,10 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  accYc = Sy * (accYc - by);
 		  accZc = Sz * (accZc - bz);
 
+		  accXc = EKF.accx_lpf.Run(accXc);
+		  accYc = EKF.accy_lpf.Run(accYc);
+		  accZc = EKF.accz_lpf.Run(accZc);
+
 		  //float acc[3];
 		  EKF.acc[0] = accXc;// - AccXh;
 		  EKF.acc[1] = accYc;// - AccYh;
@@ -1511,7 +1515,13 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  EKF.yaw_acc  = -1*euler_angles.yaw;
 		  float acctop=sqrt(accXc*accXc+accYc*accYc+accZc*accZc);		//Toplam ivme
 		  if(acctop < (1+EKF.kalman_acc_thres) * g && acctop > (1-EKF.kalman_acc_thres) * g) {
-			  EKF.ekf_update = true;
+			  if(abs(accXc) < g && abs(accYc) < g) {
+				  EKF.ekf_update = true;
+			  }
+
+			  else {
+				  EKF.ekf_update = false;
+			  }
 		  }
 
 		  else {

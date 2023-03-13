@@ -4,7 +4,7 @@
 %18.01.2023.14.05.47.txt düşüş logu
 %19.01.2023.13.52.24.txt zeytinlik
 zeytinlik = '19.01.2023.13.52.24.txt';
-log_str = '18.02.2023.16.29.04.txt';
+log_str = '12.03.2023.17.49.47.txt';
 %log_str = 'accel_calib.txt';
 
 format='(%f';
