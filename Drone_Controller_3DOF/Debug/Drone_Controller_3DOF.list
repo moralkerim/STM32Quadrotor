@@ -4911,8 +4911,8 @@ void MPU6050_Baslat(void) {
  80027be:	2005      	movs	r0, #5
  80027c0:	f003 fd2c 	bl	800621c <HAL_Delay>
 	//config = 0x18; //NO DLPF
-	config = 0x1C; //1B 42Hz DLPF || 1C 20Hz DLPF
- 80027c4:	231c      	movs	r3, #28
+	config = 0x1D; //1B 42Hz DLPF || 1C 20Hz DLPF || 1D 10Hz DLPF
+ 80027c4:	231d      	movs	r3, #29
  80027c6:	71fb      	strb	r3, [r7, #7]
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, GYRO_CONF_REG, 1, &config, 1, 50); //Gyro 250 d/s'ye ayarlandi.
  80027c8:	2332      	movs	r3, #50	; 0x32
@@ -29845,7 +29845,7 @@ Controller::Controller() {}
  800be60:	3fb33333 	.word	0x3fb33333
  800be64:	411cf5c3 	.word	0x411cf5c3
  800be68:	41f9d70a 	.word	0x41f9d70a
- 800be6c:	3eb33333 	.word	0x3eb33333
+ 800be6c:	3ee66666 	.word	0x3ee66666
  800be70:	3da3d70a 	.word	0x3da3d70a
  800be74:	3c03126f 	.word	0x3c03126f
  800be78:	41200000 	.word	0x41200000
@@ -29939,281 +29939,281 @@ void Controller::Run (void) {
  800bf1a:	687b      	ldr	r3, [r7, #4]
  800bf1c:	f893 31d5 	ldrb.w	r3, [r3, #469]	; 0x1d5
  800bf20:	2b00      	cmp	r3, #0
- 800bf22:	d002      	beq.n	800bf2a <_ZN10Controller3RunEv+0xa2>
-    	K_swarm = 3;
- 800bf24:	4b99      	ldr	r3, [pc, #612]	; (800c18c <_ZN10Controller3RunEv+0x304>)
- 800bf26:	633b      	str	r3, [r7, #48]	; 0x30
- 800bf28:	e002      	b.n	800bf30 <_ZN10Controller3RunEv+0xa8>
+ 800bf22:	d003      	beq.n	800bf2c <_ZN10Controller3RunEv+0xa4>
+    	K_swarm = 2;
+ 800bf24:	f04f 4380 	mov.w	r3, #1073741824	; 0x40000000
+ 800bf28:	633b      	str	r3, [r7, #48]	; 0x30
+ 800bf2a:	e002      	b.n	800bf32 <_ZN10Controller3RunEv+0xaa>
     }
 
     else {
     	K_swarm = 1;
- 800bf2a:	f04f 537e 	mov.w	r3, #1065353216	; 0x3f800000
- 800bf2e:	633b      	str	r3, [r7, #48]	; 0x30
+ 800bf2c:	f04f 537e 	mov.w	r3, #1065353216	; 0x3f800000
+ 800bf30:	633b      	str	r3, [r7, #48]	; 0x30
     }
 
     switch(mod) {
- 800bf30:	687b      	ldr	r3, [r7, #4]
- 800bf32:	f893 31d4 	ldrb.w	r3, [r3, #468]	; 0x1d4
- 800bf36:	2b02      	cmp	r3, #2
- 800bf38:	f000 812c 	beq.w	800c194 <_ZN10Controller3RunEv+0x30c>
- 800bf3c:	2b02      	cmp	r3, #2
- 800bf3e:	f300 819f 	bgt.w	800c280 <_ZN10Controller3RunEv+0x3f8>
- 800bf42:	2b00      	cmp	r3, #0
- 800bf44:	d002      	beq.n	800bf4c <_ZN10Controller3RunEv+0xc4>
- 800bf46:	2b01      	cmp	r3, #1
- 800bf48:	d041      	beq.n	800bfce <_ZN10Controller3RunEv+0x146>
- 800bf4a:	e199      	b.n	800c280 <_ZN10Controller3RunEv+0x3f8>
+ 800bf32:	687b      	ldr	r3, [r7, #4]
+ 800bf34:	f893 31d4 	ldrb.w	r3, [r3, #468]	; 0x1d4
+ 800bf38:	2b02      	cmp	r3, #2
+ 800bf3a:	f000 812b 	beq.w	800c194 <_ZN10Controller3RunEv+0x30c>
+ 800bf3e:	2b02      	cmp	r3, #2
+ 800bf40:	f300 819e 	bgt.w	800c280 <_ZN10Controller3RunEv+0x3f8>
+ 800bf44:	2b00      	cmp	r3, #0
+ 800bf46:	d002      	beq.n	800bf4e <_ZN10Controller3RunEv+0xc6>
+ 800bf48:	2b01      	cmp	r3, #1
+ 800bf4a:	d041      	beq.n	800bfd0 <_ZN10Controller3RunEv+0x148>
+ 800bf4c:	e198      	b.n	800c280 <_ZN10Controller3RunEv+0x3f8>
     	case STABILIZE:
     	{
     	    thr = pid_roll.Sat(ch3, 1800, 1000);
- 800bf4c:	687b      	ldr	r3, [r7, #4]
- 800bf4e:	f503 70fc 	add.w	r0, r3, #504	; 0x1f8
- 800bf52:	687b      	ldr	r3, [r7, #4]
- 800bf54:	f8d3 11b0 	ldr.w	r1, [r3, #432]	; 0x1b0
- 800bf58:	f44f 737a 	mov.w	r3, #1000	; 0x3e8
- 800bf5c:	f44f 62e1 	mov.w	r2, #1800	; 0x708
- 800bf60:	f001 fdcc 	bl	800dafc <_ZN3PID3SatEfii>
- 800bf64:	4603      	mov	r3, r0
- 800bf66:	4618      	mov	r0, r3
- 800bf68:	f7f5 f8c0 	bl	80010ec <__aeabi_f2iz>
- 800bf6c:	4603      	mov	r3, r0
- 800bf6e:	637b      	str	r3, [r7, #52]	; 0x34
+ 800bf4e:	687b      	ldr	r3, [r7, #4]
+ 800bf50:	f503 70fc 	add.w	r0, r3, #504	; 0x1f8
+ 800bf54:	687b      	ldr	r3, [r7, #4]
+ 800bf56:	f8d3 11b0 	ldr.w	r1, [r3, #432]	; 0x1b0
+ 800bf5a:	f44f 737a 	mov.w	r3, #1000	; 0x3e8
+ 800bf5e:	f44f 62e1 	mov.w	r2, #1800	; 0x708
+ 800bf62:	f001 fdcb 	bl	800dafc <_ZN3PID3SatEfii>
+ 800bf66:	4603      	mov	r3, r0
+ 800bf68:	4618      	mov	r0, r3
+ 800bf6a:	f7f5 f8bf 	bl	80010ec <__aeabi_f2iz>
+ 800bf6e:	4603      	mov	r3, r0
+ 800bf70:	637b      	str	r3, [r7, #52]	; 0x34
             roll_des     = state_des.angles[0];
- 800bf70:	687b      	ldr	r3, [r7, #4]
- 800bf72:	f8d3 2180 	ldr.w	r2, [r3, #384]	; 0x180
- 800bf76:	687b      	ldr	r3, [r7, #4]
- 800bf78:	f8c3 21d8 	str.w	r2, [r3, #472]	; 0x1d8
+ 800bf72:	687b      	ldr	r3, [r7, #4]
+ 800bf74:	f8d3 2180 	ldr.w	r2, [r3, #384]	; 0x180
+ 800bf78:	687b      	ldr	r3, [r7, #4]
+ 800bf7a:	f8c3 21d8 	str.w	r2, [r3, #472]	; 0x1d8
             pitch_des 	 = state_des.angles[1];
- 800bf7c:	687b      	ldr	r3, [r7, #4]
- 800bf7e:	f8d3 2184 	ldr.w	r2, [r3, #388]	; 0x184
- 800bf82:	687b      	ldr	r3, [r7, #4]
- 800bf84:	f8c3 21dc 	str.w	r2, [r3, #476]	; 0x1dc
+ 800bf7e:	687b      	ldr	r3, [r7, #4]
+ 800bf80:	f8d3 2184 	ldr.w	r2, [r3, #388]	; 0x184
+ 800bf84:	687b      	ldr	r3, [r7, #4]
+ 800bf86:	f8c3 21dc 	str.w	r2, [r3, #476]	; 0x1dc
             yaw_rate_des = state_des.rates[2];
- 800bf88:	687b      	ldr	r3, [r7, #4]
- 800bf8a:	f8d3 2194 	ldr.w	r2, [r3, #404]	; 0x194
- 800bf8e:	687b      	ldr	r3, [r7, #4]
- 800bf90:	f8c3 21e0 	str.w	r2, [r3, #480]	; 0x1e0
+ 800bf8a:	687b      	ldr	r3, [r7, #4]
+ 800bf8c:	f8d3 2194 	ldr.w	r2, [r3, #404]	; 0x194
+ 800bf90:	687b      	ldr	r3, [r7, #4]
+ 800bf92:	f8c3 21e0 	str.w	r2, [r3, #480]	; 0x1e0
 
             roll_des 	  	= roll_des_filt.Run(roll_des);
- 800bf94:	687b      	ldr	r3, [r7, #4]
- 800bf96:	f103 02a8 	add.w	r2, r3, #168	; 0xa8
- 800bf9a:	687b      	ldr	r3, [r7, #4]
- 800bf9c:	f8d3 31d8 	ldr.w	r3, [r3, #472]	; 0x1d8
- 800bfa0:	4619      	mov	r1, r3
- 800bfa2:	4610      	mov	r0, r2
- 800bfa4:	f001 fe3b 	bl	800dc1e <_ZN3lpf3RunEf>
- 800bfa8:	4602      	mov	r2, r0
- 800bfaa:	687b      	ldr	r3, [r7, #4]
- 800bfac:	f8c3 21d8 	str.w	r2, [r3, #472]	; 0x1d8
+ 800bf96:	687b      	ldr	r3, [r7, #4]
+ 800bf98:	f103 02a8 	add.w	r2, r3, #168	; 0xa8
+ 800bf9c:	687b      	ldr	r3, [r7, #4]
+ 800bf9e:	f8d3 31d8 	ldr.w	r3, [r3, #472]	; 0x1d8
+ 800bfa2:	4619      	mov	r1, r3
+ 800bfa4:	4610      	mov	r0, r2
+ 800bfa6:	f001 fe3a 	bl	800dc1e <_ZN3lpf3RunEf>
+ 800bfaa:	4602      	mov	r2, r0
+ 800bfac:	687b      	ldr	r3, [r7, #4]
+ 800bfae:	f8c3 21d8 	str.w	r2, [r3, #472]	; 0x1d8
             pitch_des 		= pitch_des_filt.Run(pitch_des);
- 800bfb0:	687b      	ldr	r3, [r7, #4]
- 800bfb2:	f103 02d0 	add.w	r2, r3, #208	; 0xd0
- 800bfb6:	687b      	ldr	r3, [r7, #4]
- 800bfb8:	f8d3 31dc 	ldr.w	r3, [r3, #476]	; 0x1dc
- 800bfbc:	4619      	mov	r1, r3
- 800bfbe:	4610      	mov	r0, r2
- 800bfc0:	f001 fe2d 	bl	800dc1e <_ZN3lpf3RunEf>
- 800bfc4:	4602      	mov	r2, r0
- 800bfc6:	687b      	ldr	r3, [r7, #4]
- 800bfc8:	f8c3 21dc 	str.w	r2, [r3, #476]	; 0x1dc
+ 800bfb2:	687b      	ldr	r3, [r7, #4]
+ 800bfb4:	f103 02d0 	add.w	r2, r3, #208	; 0xd0
+ 800bfb8:	687b      	ldr	r3, [r7, #4]
+ 800bfba:	f8d3 31dc 	ldr.w	r3, [r3, #476]	; 0x1dc
+ 800bfbe:	4619      	mov	r1, r3
+ 800bfc0:	4610      	mov	r0, r2
+ 800bfc2:	f001 fe2c 	bl	800dc1e <_ZN3lpf3RunEf>
+ 800bfc6:	4602      	mov	r2, r0
+ 800bfc8:	687b      	ldr	r3, [r7, #4]
+ 800bfca:	f8c3 21dc 	str.w	r2, [r3, #476]	; 0x1dc
             //yaw_rate_des  	= yaw_des_filt.Run(yaw_rate_des);
     	    break;
- 800bfcc:	e158      	b.n	800c280 <_ZN10Controller3RunEv+0x3f8>
+ 800bfce:	e157      	b.n	800c280 <_ZN10Controller3RunEv+0x3f8>
     	}
 
     	case ALT_HOLD:
     	{
     		F = p_alt.PI_Vel(z0, z, z_vel, Kp_alt, Ki_alt, ch3) + m*g;
- 800bfce:	687b      	ldr	r3, [r7, #4]
- 800bfd0:	f503 6684 	add.w	r6, r3, #1056	; 0x420
- 800bfd4:	687b      	ldr	r3, [r7, #4]
- 800bfd6:	f8d3 81a8 	ldr.w	r8, [r3, #424]	; 0x1a8
- 800bfda:	687b      	ldr	r3, [r7, #4]
- 800bfdc:	f8d3 91ac 	ldr.w	r9, [r3, #428]	; 0x1ac
- 800bfe0:	687b      	ldr	r3, [r7, #4]
- 800bfe2:	f8d3 a1a4 	ldr.w	sl, [r3, #420]	; 0x1a4
- 800bfe6:	687b      	ldr	r3, [r7, #4]
- 800bfe8:	f8d3 4084 	ldr.w	r4, [r3, #132]	; 0x84
- 800bfec:	687b      	ldr	r3, [r7, #4]
- 800bfee:	f8d3 5088 	ldr.w	r5, [r3, #136]	; 0x88
- 800bff2:	687b      	ldr	r3, [r7, #4]
- 800bff4:	f8d3 31b0 	ldr.w	r3, [r3, #432]	; 0x1b0
- 800bff8:	4618      	mov	r0, r3
- 800bffa:	f7f5 f89d 	bl	8001138 <__aeabi_f2uiz>
- 800bffe:	4603      	mov	r3, r0
- 800c000:	9302      	str	r3, [sp, #8]
- 800c002:	9501      	str	r5, [sp, #4]
- 800c004:	9400      	str	r4, [sp, #0]
- 800c006:	4653      	mov	r3, sl
- 800c008:	464a      	mov	r2, r9
- 800c00a:	4641      	mov	r1, r8
- 800c00c:	4630      	mov	r0, r6
- 800c00e:	f001 fad3 	bl	800d5b8 <_ZN3PID6PI_VelEfffffj>
- 800c012:	4604      	mov	r4, r0
- 800c014:	687b      	ldr	r3, [r7, #4]
- 800c016:	6c9a      	ldr	r2, [r3, #72]	; 0x48
- 800c018:	687b      	ldr	r3, [r7, #4]
- 800c01a:	6cdb      	ldr	r3, [r3, #76]	; 0x4c
- 800c01c:	4619      	mov	r1, r3
- 800c01e:	4610      	mov	r0, r2
- 800c020:	f7f4 fe88 	bl	8000d34 <__aeabi_fmul>
- 800c024:	4603      	mov	r3, r0
- 800c026:	4619      	mov	r1, r3
- 800c028:	4620      	mov	r0, r4
- 800c02a:	f7f4 fd7b 	bl	8000b24 <__addsf3>
- 800c02e:	4603      	mov	r3, r0
- 800c030:	461a      	mov	r2, r3
- 800c032:	687b      	ldr	r3, [r7, #4]
- 800c034:	f8c3 2158 	str.w	r2, [r3, #344]	; 0x158
+ 800bfd0:	687b      	ldr	r3, [r7, #4]
+ 800bfd2:	f503 6684 	add.w	r6, r3, #1056	; 0x420
+ 800bfd6:	687b      	ldr	r3, [r7, #4]
+ 800bfd8:	f8d3 81a8 	ldr.w	r8, [r3, #424]	; 0x1a8
+ 800bfdc:	687b      	ldr	r3, [r7, #4]
+ 800bfde:	f8d3 91ac 	ldr.w	r9, [r3, #428]	; 0x1ac
+ 800bfe2:	687b      	ldr	r3, [r7, #4]
+ 800bfe4:	f8d3 a1a4 	ldr.w	sl, [r3, #420]	; 0x1a4
+ 800bfe8:	687b      	ldr	r3, [r7, #4]
+ 800bfea:	f8d3 4084 	ldr.w	r4, [r3, #132]	; 0x84
+ 800bfee:	687b      	ldr	r3, [r7, #4]
+ 800bff0:	f8d3 5088 	ldr.w	r5, [r3, #136]	; 0x88
+ 800bff4:	687b      	ldr	r3, [r7, #4]
+ 800bff6:	f8d3 31b0 	ldr.w	r3, [r3, #432]	; 0x1b0
+ 800bffa:	4618      	mov	r0, r3
+ 800bffc:	f7f5 f89c 	bl	8001138 <__aeabi_f2uiz>
+ 800c000:	4603      	mov	r3, r0
+ 800c002:	9302      	str	r3, [sp, #8]
+ 800c004:	9501      	str	r5, [sp, #4]
+ 800c006:	9400      	str	r4, [sp, #0]
+ 800c008:	4653      	mov	r3, sl
+ 800c00a:	464a      	mov	r2, r9
+ 800c00c:	4641      	mov	r1, r8
+ 800c00e:	4630      	mov	r0, r6
+ 800c010:	f001 fad2 	bl	800d5b8 <_ZN3PID6PI_VelEfffffj>
+ 800c014:	4604      	mov	r4, r0
+ 800c016:	687b      	ldr	r3, [r7, #4]
+ 800c018:	6c9a      	ldr	r2, [r3, #72]	; 0x48
+ 800c01a:	687b      	ldr	r3, [r7, #4]
+ 800c01c:	6cdb      	ldr	r3, [r3, #76]	; 0x4c
+ 800c01e:	4619      	mov	r1, r3
+ 800c020:	4610      	mov	r0, r2
+ 800c022:	f7f4 fe87 	bl	8000d34 <__aeabi_fmul>
+ 800c026:	4603      	mov	r3, r0
+ 800c028:	4619      	mov	r1, r3
+ 800c02a:	4620      	mov	r0, r4
+ 800c02c:	f7f4 fd7a 	bl	8000b24 <__addsf3>
+ 800c030:	4603      	mov	r3, r0
+ 800c032:	461a      	mov	r2, r3
+ 800c034:	687b      	ldr	r3, [r7, #4]
+ 800c036:	f8c3 2158 	str.w	r2, [r3, #344]	; 0x158
 			float deg2rad = 0.0175;
- 800c038:	4b55      	ldr	r3, [pc, #340]	; (800c190 <_ZN10Controller3RunEv+0x308>)
- 800c03a:	62bb      	str	r3, [r7, #40]	; 0x28
+ 800c03a:	4b55      	ldr	r3, [pc, #340]	; (800c190 <_ZN10Controller3RunEv+0x308>)
+ 800c03c:	62bb      	str	r3, [r7, #40]	; 0x28
 			float roll_r = roll * deg2rad;
- 800c03c:	687b      	ldr	r3, [r7, #4]
- 800c03e:	68db      	ldr	r3, [r3, #12]
- 800c040:	4619      	mov	r1, r3
- 800c042:	6ab8      	ldr	r0, [r7, #40]	; 0x28
- 800c044:	f7f4 fe76 	bl	8000d34 <__aeabi_fmul>
- 800c048:	4603      	mov	r3, r0
- 800c04a:	627b      	str	r3, [r7, #36]	; 0x24
+ 800c03e:	687b      	ldr	r3, [r7, #4]
+ 800c040:	68db      	ldr	r3, [r3, #12]
+ 800c042:	4619      	mov	r1, r3
+ 800c044:	6ab8      	ldr	r0, [r7, #40]	; 0x28
+ 800c046:	f7f4 fe75 	bl	8000d34 <__aeabi_fmul>
+ 800c04a:	4603      	mov	r3, r0
+ 800c04c:	627b      	str	r3, [r7, #36]	; 0x24
 			float pitch_r = pitch * deg2rad;
- 800c04c:	687b      	ldr	r3, [r7, #4]
- 800c04e:	691b      	ldr	r3, [r3, #16]
- 800c050:	4619      	mov	r1, r3
- 800c052:	6ab8      	ldr	r0, [r7, #40]	; 0x28
- 800c054:	f7f4 fe6e 	bl	8000d34 <__aeabi_fmul>
- 800c058:	4603      	mov	r3, r0
- 800c05a:	623b      	str	r3, [r7, #32]
+ 800c04e:	687b      	ldr	r3, [r7, #4]
+ 800c050:	691b      	ldr	r3, [r3, #16]
+ 800c052:	4619      	mov	r1, r3
+ 800c054:	6ab8      	ldr	r0, [r7, #40]	; 0x28
+ 800c056:	f7f4 fe6d 	bl	8000d34 <__aeabi_fmul>
+ 800c05a:	4603      	mov	r3, r0
+ 800c05c:	623b      	str	r3, [r7, #32]
 			float b2e = 1 / cos(roll_r) / cos(pitch_r);
- 800c05c:	6a78      	ldr	r0, [r7, #36]	; 0x24
- 800c05e:	f7f5 fecf 	bl	8001e00 <_ZSt3cosf>
- 800c062:	4603      	mov	r3, r0
- 800c064:	4619      	mov	r1, r3
- 800c066:	f04f 507e 	mov.w	r0, #1065353216	; 0x3f800000
- 800c06a:	f7f4 ff17 	bl	8000e9c <__aeabi_fdiv>
- 800c06e:	4603      	mov	r3, r0
- 800c070:	461c      	mov	r4, r3
- 800c072:	6a38      	ldr	r0, [r7, #32]
- 800c074:	f7f5 fec4 	bl	8001e00 <_ZSt3cosf>
- 800c078:	4603      	mov	r3, r0
- 800c07a:	4619      	mov	r1, r3
- 800c07c:	4620      	mov	r0, r4
- 800c07e:	f7f4 ff0d 	bl	8000e9c <__aeabi_fdiv>
- 800c082:	4603      	mov	r3, r0
- 800c084:	61fb      	str	r3, [r7, #28]
+ 800c05e:	6a78      	ldr	r0, [r7, #36]	; 0x24
+ 800c060:	f7f5 fece 	bl	8001e00 <_ZSt3cosf>
+ 800c064:	4603      	mov	r3, r0
+ 800c066:	4619      	mov	r1, r3
+ 800c068:	f04f 507e 	mov.w	r0, #1065353216	; 0x3f800000
+ 800c06c:	f7f4 ff16 	bl	8000e9c <__aeabi_fdiv>
+ 800c070:	4603      	mov	r3, r0
+ 800c072:	461c      	mov	r4, r3
+ 800c074:	6a38      	ldr	r0, [r7, #32]
+ 800c076:	f7f5 fec3 	bl	8001e00 <_ZSt3cosf>
+ 800c07a:	4603      	mov	r3, r0
+ 800c07c:	4619      	mov	r1, r3
+ 800c07e:	4620      	mov	r0, r4
+ 800c080:	f7f4 ff0c 	bl	8000e9c <__aeabi_fdiv>
+ 800c084:	4603      	mov	r3, r0
+ 800c086:	61fb      	str	r3, [r7, #28]
 
 			F = F * b2e ; // Body to Earth
- 800c086:	687b      	ldr	r3, [r7, #4]
- 800c088:	f8d3 3158 	ldr.w	r3, [r3, #344]	; 0x158
- 800c08c:	69f9      	ldr	r1, [r7, #28]
- 800c08e:	4618      	mov	r0, r3
- 800c090:	f7f4 fe50 	bl	8000d34 <__aeabi_fmul>
- 800c094:	4603      	mov	r3, r0
- 800c096:	461a      	mov	r2, r3
- 800c098:	687b      	ldr	r3, [r7, #4]
- 800c09a:	f8c3 2158 	str.w	r2, [r3, #344]	; 0x158
+ 800c088:	687b      	ldr	r3, [r7, #4]
+ 800c08a:	f8d3 3158 	ldr.w	r3, [r3, #344]	; 0x158
+ 800c08e:	69f9      	ldr	r1, [r7, #28]
+ 800c090:	4618      	mov	r0, r3
+ 800c092:	f7f4 fe4f 	bl	8000d34 <__aeabi_fmul>
+ 800c096:	4603      	mov	r3, r0
+ 800c098:	461a      	mov	r2, r3
+ 800c09a:	687b      	ldr	r3, [r7, #4]
+ 800c09c:	f8c3 2158 	str.w	r2, [r3, #344]	; 0x158
 			F = p_alt.Sat(F, F_max, F_min);
- 800c09e:	687b      	ldr	r3, [r7, #4]
- 800c0a0:	f503 6484 	add.w	r4, r3, #1056	; 0x420
- 800c0a4:	687b      	ldr	r3, [r7, #4]
- 800c0a6:	f8d3 5158 	ldr.w	r5, [r3, #344]	; 0x158
- 800c0aa:	687b      	ldr	r3, [r7, #4]
- 800c0ac:	6d1b      	ldr	r3, [r3, #80]	; 0x50
- 800c0ae:	4618      	mov	r0, r3
- 800c0b0:	f7f5 f81c 	bl	80010ec <__aeabi_f2iz>
- 800c0b4:	4606      	mov	r6, r0
- 800c0b6:	687b      	ldr	r3, [r7, #4]
- 800c0b8:	6d5b      	ldr	r3, [r3, #84]	; 0x54
- 800c0ba:	4618      	mov	r0, r3
- 800c0bc:	f7f5 f816 	bl	80010ec <__aeabi_f2iz>
- 800c0c0:	4603      	mov	r3, r0
- 800c0c2:	4632      	mov	r2, r6
- 800c0c4:	4629      	mov	r1, r5
- 800c0c6:	4620      	mov	r0, r4
- 800c0c8:	f001 fd18 	bl	800dafc <_ZN3PID3SatEfii>
- 800c0cc:	4602      	mov	r2, r0
- 800c0ce:	687b      	ldr	r3, [r7, #4]
- 800c0d0:	f8c3 2158 	str.w	r2, [r3, #344]	; 0x158
+ 800c0a0:	687b      	ldr	r3, [r7, #4]
+ 800c0a2:	f503 6484 	add.w	r4, r3, #1056	; 0x420
+ 800c0a6:	687b      	ldr	r3, [r7, #4]
+ 800c0a8:	f8d3 5158 	ldr.w	r5, [r3, #344]	; 0x158
+ 800c0ac:	687b      	ldr	r3, [r7, #4]
+ 800c0ae:	6d1b      	ldr	r3, [r3, #80]	; 0x50
+ 800c0b0:	4618      	mov	r0, r3
+ 800c0b2:	f7f5 f81b 	bl	80010ec <__aeabi_f2iz>
+ 800c0b6:	4606      	mov	r6, r0
+ 800c0b8:	687b      	ldr	r3, [r7, #4]
+ 800c0ba:	6d5b      	ldr	r3, [r3, #84]	; 0x54
+ 800c0bc:	4618      	mov	r0, r3
+ 800c0be:	f7f5 f815 	bl	80010ec <__aeabi_f2iz>
+ 800c0c2:	4603      	mov	r3, r0
+ 800c0c4:	4632      	mov	r2, r6
+ 800c0c6:	4629      	mov	r1, r5
+ 800c0c8:	4620      	mov	r0, r4
+ 800c0ca:	f001 fd17 	bl	800dafc <_ZN3PID3SatEfii>
+ 800c0ce:	4602      	mov	r2, r0
+ 800c0d0:	687b      	ldr	r3, [r7, #4]
+ 800c0d2:	f8c3 2158 	str.w	r2, [r3, #344]	; 0x158
 			thr = p_alt.F2thr(F);
- 800c0d4:	687b      	ldr	r3, [r7, #4]
- 800c0d6:	f503 6284 	add.w	r2, r3, #1056	; 0x420
- 800c0da:	687b      	ldr	r3, [r7, #4]
- 800c0dc:	f8d3 3158 	ldr.w	r3, [r3, #344]	; 0x158
- 800c0e0:	4619      	mov	r1, r3
- 800c0e2:	4610      	mov	r0, r2
- 800c0e4:	f001 fd3a 	bl	800db5c <_ZN3PID5F2thrEf>
- 800c0e8:	4603      	mov	r3, r0
- 800c0ea:	637b      	str	r3, [r7, #52]	; 0x34
+ 800c0d6:	687b      	ldr	r3, [r7, #4]
+ 800c0d8:	f503 6284 	add.w	r2, r3, #1056	; 0x420
+ 800c0dc:	687b      	ldr	r3, [r7, #4]
+ 800c0de:	f8d3 3158 	ldr.w	r3, [r3, #344]	; 0x158
+ 800c0e2:	4619      	mov	r1, r3
+ 800c0e4:	4610      	mov	r0, r2
+ 800c0e6:	f001 fd39 	bl	800db5c <_ZN3PID5F2thrEf>
+ 800c0ea:	4603      	mov	r3, r0
+ 800c0ec:	637b      	str	r3, [r7, #52]	; 0x34
 			thr = p_alt.Sat(thr, 1800, 1100);
- 800c0ec:	687b      	ldr	r3, [r7, #4]
- 800c0ee:	f503 6484 	add.w	r4, r3, #1056	; 0x420
- 800c0f2:	6b78      	ldr	r0, [r7, #52]	; 0x34
- 800c0f4:	f7f4 fdca 	bl	8000c8c <__aeabi_i2f>
- 800c0f8:	4601      	mov	r1, r0
- 800c0fa:	f240 434c 	movw	r3, #1100	; 0x44c
- 800c0fe:	f44f 62e1 	mov.w	r2, #1800	; 0x708
- 800c102:	4620      	mov	r0, r4
- 800c104:	f001 fcfa 	bl	800dafc <_ZN3PID3SatEfii>
- 800c108:	4603      	mov	r3, r0
- 800c10a:	4618      	mov	r0, r3
- 800c10c:	f7f4 ffee 	bl	80010ec <__aeabi_f2iz>
- 800c110:	4603      	mov	r3, r0
- 800c112:	637b      	str	r3, [r7, #52]	; 0x34
+ 800c0ee:	687b      	ldr	r3, [r7, #4]
+ 800c0f0:	f503 6484 	add.w	r4, r3, #1056	; 0x420
+ 800c0f4:	6b78      	ldr	r0, [r7, #52]	; 0x34
+ 800c0f6:	f7f4 fdc9 	bl	8000c8c <__aeabi_i2f>
+ 800c0fa:	4601      	mov	r1, r0
+ 800c0fc:	f240 434c 	movw	r3, #1100	; 0x44c
+ 800c100:	f44f 62e1 	mov.w	r2, #1800	; 0x708
+ 800c104:	4620      	mov	r0, r4
+ 800c106:	f001 fcf9 	bl	800dafc <_ZN3PID3SatEfii>
+ 800c10a:	4603      	mov	r3, r0
+ 800c10c:	4618      	mov	r0, r3
+ 800c10e:	f7f4 ffed 	bl	80010ec <__aeabi_f2iz>
+ 800c112:	4603      	mov	r3, r0
+ 800c114:	637b      	str	r3, [r7, #52]	; 0x34
 			alt_thr = thr;
- 800c114:	6b78      	ldr	r0, [r7, #52]	; 0x34
- 800c116:	f7f4 fdb9 	bl	8000c8c <__aeabi_i2f>
- 800c11a:	4602      	mov	r2, r0
- 800c11c:	687b      	ldr	r3, [r7, #4]
- 800c11e:	f8c3 2648 	str.w	r2, [r3, #1608]	; 0x648
+ 800c116:	6b78      	ldr	r0, [r7, #52]	; 0x34
+ 800c118:	f7f4 fdb8 	bl	8000c8c <__aeabi_i2f>
+ 800c11c:	4602      	mov	r2, r0
+ 800c11e:	687b      	ldr	r3, [r7, #4]
+ 800c120:	f8c3 2648 	str.w	r2, [r3, #1608]	; 0x648
 			z0 = p_alt.zi;
- 800c122:	687b      	ldr	r3, [r7, #4]
- 800c124:	f8d3 24cc 	ldr.w	r2, [r3, #1228]	; 0x4cc
- 800c128:	687b      	ldr	r3, [r7, #4]
- 800c12a:	f8c3 21a8 	str.w	r2, [r3, #424]	; 0x1a8
+ 800c124:	687b      	ldr	r3, [r7, #4]
+ 800c126:	f8d3 24cc 	ldr.w	r2, [r3, #1228]	; 0x4cc
+ 800c12a:	687b      	ldr	r3, [r7, #4]
+ 800c12c:	f8c3 21a8 	str.w	r2, [r3, #424]	; 0x1a8
 
             roll_des     = state_des.angles[0];
- 800c12e:	687b      	ldr	r3, [r7, #4]
- 800c130:	f8d3 2180 	ldr.w	r2, [r3, #384]	; 0x180
- 800c134:	687b      	ldr	r3, [r7, #4]
- 800c136:	f8c3 21d8 	str.w	r2, [r3, #472]	; 0x1d8
+ 800c130:	687b      	ldr	r3, [r7, #4]
+ 800c132:	f8d3 2180 	ldr.w	r2, [r3, #384]	; 0x180
+ 800c136:	687b      	ldr	r3, [r7, #4]
+ 800c138:	f8c3 21d8 	str.w	r2, [r3, #472]	; 0x1d8
             pitch_des 	 = state_des.angles[1];
- 800c13a:	687b      	ldr	r3, [r7, #4]
- 800c13c:	f8d3 2184 	ldr.w	r2, [r3, #388]	; 0x184
- 800c140:	687b      	ldr	r3, [r7, #4]
- 800c142:	f8c3 21dc 	str.w	r2, [r3, #476]	; 0x1dc
+ 800c13c:	687b      	ldr	r3, [r7, #4]
+ 800c13e:	f8d3 2184 	ldr.w	r2, [r3, #388]	; 0x184
+ 800c142:	687b      	ldr	r3, [r7, #4]
+ 800c144:	f8c3 21dc 	str.w	r2, [r3, #476]	; 0x1dc
             yaw_rate_des = state_des.rates[2];
- 800c146:	687b      	ldr	r3, [r7, #4]
- 800c148:	f8d3 2194 	ldr.w	r2, [r3, #404]	; 0x194
- 800c14c:	687b      	ldr	r3, [r7, #4]
- 800c14e:	f8c3 21e0 	str.w	r2, [r3, #480]	; 0x1e0
+ 800c148:	687b      	ldr	r3, [r7, #4]
+ 800c14a:	f8d3 2194 	ldr.w	r2, [r3, #404]	; 0x194
+ 800c14e:	687b      	ldr	r3, [r7, #4]
+ 800c150:	f8c3 21e0 	str.w	r2, [r3, #480]	; 0x1e0
 
             roll_des 	  	= roll_des_filt.Run(roll_des);
- 800c152:	687b      	ldr	r3, [r7, #4]
- 800c154:	f103 02a8 	add.w	r2, r3, #168	; 0xa8
- 800c158:	687b      	ldr	r3, [r7, #4]
- 800c15a:	f8d3 31d8 	ldr.w	r3, [r3, #472]	; 0x1d8
- 800c15e:	4619      	mov	r1, r3
- 800c160:	4610      	mov	r0, r2
- 800c162:	f001 fd5c 	bl	800dc1e <_ZN3lpf3RunEf>
- 800c166:	4602      	mov	r2, r0
- 800c168:	687b      	ldr	r3, [r7, #4]
- 800c16a:	f8c3 21d8 	str.w	r2, [r3, #472]	; 0x1d8
+ 800c154:	687b      	ldr	r3, [r7, #4]
+ 800c156:	f103 02a8 	add.w	r2, r3, #168	; 0xa8
+ 800c15a:	687b      	ldr	r3, [r7, #4]
+ 800c15c:	f8d3 31d8 	ldr.w	r3, [r3, #472]	; 0x1d8
+ 800c160:	4619      	mov	r1, r3
+ 800c162:	4610      	mov	r0, r2
+ 800c164:	f001 fd5b 	bl	800dc1e <_ZN3lpf3RunEf>
+ 800c168:	4602      	mov	r2, r0
+ 800c16a:	687b      	ldr	r3, [r7, #4]
+ 800c16c:	f8c3 21d8 	str.w	r2, [r3, #472]	; 0x1d8
             pitch_des 		= pitch_des_filt.Run(pitch_des);
- 800c16e:	687b      	ldr	r3, [r7, #4]
- 800c170:	f103 02d0 	add.w	r2, r3, #208	; 0xd0
- 800c174:	687b      	ldr	r3, [r7, #4]
- 800c176:	f8d3 31dc 	ldr.w	r3, [r3, #476]	; 0x1dc
- 800c17a:	4619      	mov	r1, r3
- 800c17c:	4610      	mov	r0, r2
- 800c17e:	f001 fd4e 	bl	800dc1e <_ZN3lpf3RunEf>
- 800c182:	4602      	mov	r2, r0
- 800c184:	687b      	ldr	r3, [r7, #4]
- 800c186:	f8c3 21dc 	str.w	r2, [r3, #476]	; 0x1dc
+ 800c170:	687b      	ldr	r3, [r7, #4]
+ 800c172:	f103 02d0 	add.w	r2, r3, #208	; 0xd0
+ 800c176:	687b      	ldr	r3, [r7, #4]
+ 800c178:	f8d3 31dc 	ldr.w	r3, [r3, #476]	; 0x1dc
+ 800c17c:	4619      	mov	r1, r3
+ 800c17e:	4610      	mov	r0, r2
+ 800c180:	f001 fd4d 	bl	800dc1e <_ZN3lpf3RunEf>
+ 800c184:	4602      	mov	r2, r0
+ 800c186:	687b      	ldr	r3, [r7, #4]
+ 800c188:	f8c3 21dc 	str.w	r2, [r3, #476]	; 0x1dc
             //yaw_rate_des  	= yaw_des_filt.Run(yaw_rate_des);
 			break;
- 800c18a:	e079      	b.n	800c280 <_ZN10Controller3RunEv+0x3f8>
- 800c18c:	40400000 	.word	0x40400000
+ 800c18c:	e078      	b.n	800c280 <_ZN10Controller3RunEv+0x3f8>
+ 800c18e:	bf00      	nop
  800c190:	3c8f5c29 	.word	0x3c8f5c29
     	}
 

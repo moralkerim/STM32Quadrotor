@@ -576,7 +576,7 @@ void MPU6050_Baslat(void) {
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, MPU6050_POW_REG, 1, &config, 1, 50); //Güç registerını aktif et
 	HAL_Delay(5);
 	//config = 0x18; //NO DLPF
-	config = 0x1C; //1B 42Hz DLPF || 1C 20Hz DLPF
+	config = 0x1D; //1B 42Hz DLPF || 1C 20Hz DLPF || 1D 10Hz DLPF
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, GYRO_CONF_REG, 1, &config, 1, 50); //Gyro 250 d/s'ye ayarlandi.
 	HAL_Delay(5);
 

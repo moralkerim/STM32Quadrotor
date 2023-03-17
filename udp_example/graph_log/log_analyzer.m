@@ -4,8 +4,9 @@
 %18.01.2023.14.05.47.txt düşüş logu
 %19.01.2023.13.52.24.txt zeytinlik
 zeytinlik = '19.01.2023.13.52.24.txt';
-log_str = '12.03.2023.17.49.47.txt';
-%log_str = 'accel_calib.txt';
+swarm = 'swarm3.txt';
+log_str = swarm;
+%log_str = zeytinlik;
 
 format='(%f';
 end_format = ')';
