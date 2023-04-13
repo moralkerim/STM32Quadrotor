@@ -27,7 +27,8 @@ C_SRCS += \
 
 CPP_SRCS += \
 ../Core/Src/coordinates.cpp \
-../Core/Src/main.cpp 
+../Core/Src/main.cpp \
+../Core/Src/mspv2.cpp 
 
 C_DEPS += \
 ./Core/Src/HMC5883L.d \
@@ -63,6 +64,7 @@ OBJS += \
 ./Core/Src/i2c.o \
 ./Core/Src/main.o \
 ./Core/Src/moving-median.o \
+./Core/Src/mspv2.o \
 ./Core/Src/nrf24.o \
 ./Core/Src/spi.o \
 ./Core/Src/stm32f1xx_hal_msp.o \
@@ -75,7 +77,8 @@ OBJS += \
 
 CPP_DEPS += \
 ./Core/Src/coordinates.d \
-./Core/Src/main.d 
+./Core/Src/main.d \
+./Core/Src/mspv2.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
@@ -103,6 +106,8 @@ Core/Src/main.o: ../Core/Src/main.cpp Core/Src/subdir.mk
 	arm-none-eabi-g++ "$<" -mcpu=cortex-m3 -std=gnu++14 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F103xB -c -I../Core/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I../Drivers/CMSIS/Include -I"C:/Users/Kerim/STM32CubeIDE/STM32Quadrotor/Drone_Controller_3DOF/modular_robots/modular_ws/src/controller/include/controller" -O0 -ffunction-sections -fdata-sections -fno-exceptions -fno-rtti -fno-use-cxa-atexit -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"$@" --specs=nano.specs -mfloat-abi=soft -mthumb -o "$@"
 Core/Src/moving-median.o: ../Core/Src/moving-median.c Core/Src/subdir.mk
 	arm-none-eabi-gcc "$<" -mcpu=cortex-m3 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F103xB -c -I../Core/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I../Drivers/CMSIS/Include -I"C:/Users/Kerim/STM32CubeIDE/STM32Quadrotor/Drone_Controller_3DOF/modular_robots/modular_ws/src/controller/include/controller" -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/moving-median.d" -MT"$@" --specs=nano.specs -mfloat-abi=soft -mthumb -o "$@"
+Core/Src/mspv2.o: ../Core/Src/mspv2.cpp Core/Src/subdir.mk
+	arm-none-eabi-g++ "$<" -mcpu=cortex-m3 -std=gnu++14 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F103xB -c -I../Core/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I../Drivers/CMSIS/Include -I"C:/Users/Kerim/STM32CubeIDE/STM32Quadrotor/Drone_Controller_3DOF/modular_robots/modular_ws/src/controller/include/controller" -O0 -ffunction-sections -fdata-sections -fno-exceptions -fno-rtti -fno-use-cxa-atexit -Wall -fstack-usage -MMD -MP -MF"Core/Src/mspv2.d" -MT"$@" --specs=nano.specs -mfloat-abi=soft -mthumb -o "$@"
 Core/Src/nrf24.o: ../Core/Src/nrf24.c Core/Src/subdir.mk
 	arm-none-eabi-gcc "$<" -mcpu=cortex-m3 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F103xB -c -I../Core/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I../Drivers/CMSIS/Include -I"C:/Users/Kerim/STM32CubeIDE/STM32Quadrotor/Drone_Controller_3DOF/modular_robots/modular_ws/src/controller/include/controller" -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/nrf24.d" -MT"$@" --specs=nano.specs -mfloat-abi=soft -mthumb -o "$@"
 Core/Src/spi.o: ../Core/Src/spi.c Core/Src/subdir.mk

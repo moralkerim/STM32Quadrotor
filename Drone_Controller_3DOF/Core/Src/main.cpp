@@ -21,7 +21,6 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
-#include <Kalman.hpp>
 #include "main.h"
 #include "dma.h"
 #include "i2c.h"
@@ -38,9 +37,10 @@
 #include <string.h>
 #include <math.h>
 #include "coordinates.hpp"
-
+#include "Kalman.hpp"
 #include "Controller.hpp"
 #include "TelemData.h"
+#include "mspv2.hpp"
 
 extern "C" {
 	#include "bmp180.h"
@@ -121,6 +121,7 @@ extern "C" {
 #define EMERGENCY_CH 5
 #define SWARM_CH 6
 #define MAGNET_CH 7
+#define COIL_CH 6
 #define MOD_CH 8
 #define CH3_MIN 1000
 
@@ -167,6 +168,8 @@ int IC_val1, IC_val2, pwm_input;
 char buf[sizeof(telem_pack)];
 Kalman_Filtresi EKF;
 Controller controller;
+MatekOF matek_of;
+
 int controller_output[4];
 int controller_output_2[4];
 
@@ -273,6 +276,7 @@ void MagCalib(int16_t MAG_X,int16_t MAG_Y,int16_t MAG_Z);
 void CheckFailsafe();
 void CheckSwarm();
 void SwitchMag();
+void SwitchCoil();
 float comp_filter(float angle_prev, float rate, float angle_acc, bool armed);
 float unwrap_yaw(float yaw,float yaw_prev);
 double unwrap_yaw2(float yaw,float yaw_prev);
@@ -297,6 +301,15 @@ void Delay(long millis) {
 		printf("Do nothing...");
 	}
 }
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	if(huart->Instance == matek_of.huart_of.Instance)
+	{
+		matek_of.MatekRead();
+	}
+}
+
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
 	if(huart->Instance == huart2.Instance) {
@@ -372,7 +385,7 @@ int main(void)
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
 
-  HAL_UART_Receive_DMA(&huart1, (uint8_t*)&cam_data, sizeof(cam_data));
+  //HAL_UART_Receive_DMA(&huart1, (uint8_t*)&cam_data, sizeof(cam_data));
 
   //HAL_UART_Receive_DMA(&huart2, (uint8_t*)ch_rcv_buf, 1);
   //HAL_UART_Receive_DMA(&huart1, rx_buffer, sizeof(cam_data)-1);
@@ -400,8 +413,9 @@ int main(void)
   MotorBaslat();
   //GPSInit();
   HAL_Delay(1000);
-
-  Ringbuf_init();
+  matek_of.begin(huart1);
+  matek_of.MatekRead();
+  //Ringbuf_init();
 
 	/***********NRF Ayarlari****************/
 
@@ -475,6 +489,7 @@ int main(void)
 
   while (1)
   {
+
 	#ifdef UAV2
 	 		bool data_healthy;
 
@@ -575,8 +590,8 @@ void MPU6050_Baslat(void) {
 	uint8_t config = 0x00;
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, MPU6050_POW_REG, 1, &config, 1, 50); //Güç registerını aktif et
 	HAL_Delay(5);
-	//config = 0x18; //NO DLPF
-	config = 0x1D; //1B 42Hz DLPF || 1C 20Hz DLPF || 1D 10Hz DLPF
+	config = 0x18; //NO DLPF
+	config = 0x1C; //1B 42Hz DLPF || 1C 20Hz DLPF || 1D 10Hz DLPF
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)MPU6050, GYRO_CONF_REG, 1, &config, 1, 50); //Gyro 250 d/s'ye ayarlandi.
 	HAL_Delay(5);
 
@@ -588,6 +603,7 @@ void MPU6050_Baslat(void) {
 	config = 0x08;
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)ADXL345, 0x2d, 1, &config, 1, 5);
 	//config = 0x0D;
+	//config = 0x0F; //NO DLPF
 	config = 0x0B; //100 HZ LPF
 	HAL_I2C_Mem_Write(&hi2c1, (uint16_t)ADXL345, 0x2c, 1, &config, 1, 5); //Acc +-8g'ye ayarlandi.
 	config = 0x01; //0x01 4g, 0x00 2g,
@@ -668,6 +684,30 @@ void SwitchMag() {
 		break;
 	default:
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4|GPIO_PIN_5, GPIO_PIN_RESET);
+		break;
+	}
+}
+
+void SwitchCoil() {
+
+	char state;
+
+	// determine which state is the switch on
+	if		(ch[COIL_CH-1] > 750  && ch[COIL_CH-1] < 1250) state = 0;
+	else if (ch[COIL_CH-1] > 1750 && ch[COIL_CH-1] < 2250) state = 1;
+	// change coil state based on state of switch
+	// state = 0 -> off
+	// state = 1 -> attach
+
+	switch(state) {
+	case 0:
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+		break;
+	case 1:
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+		break;
+	default:
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
 		break;
 	}
 }
@@ -1446,6 +1486,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  accY = AccOku(ACC_Y_ADDR);
 		  accZ = AccOku(ACC_Z_ADDR);
 
+
 //		  accX = (1+Sx) * accX + bx;
 //		  accY = (1+Sy) * accY + by;
 //		  accZ = (1+Sz) * accZ + bz;
@@ -1461,9 +1502,11 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  accYc = Sy * (accYc - by);
 		  accZc = Sz * (accZc - bz);
 
+
 		  accXc = EKF.accx_lpf.Run(accXc);
 		  accYc = EKF.accy_lpf.Run(accYc);
 		  accZc = EKF.accz_lpf.Run(accZc);
+
 
 		  //float acc[3];
 		  EKF.acc[0] = accXc;// - AccXh;
@@ -1613,6 +1656,10 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  CheckSwarm();
 		  PWMYaz();
 
+		  #ifdef UAV2
+		  	  SwitchCoil();
+		  #endif
+
 		#ifdef UAV1
 		  	  	//Pack motor outputs to nrf24 buffer.
 		  	  	char nrf_buf[sizeof(struct pwm)];
@@ -1656,6 +1703,11 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 						if(i == EMERGENCY_CH-1) {
 							ch_[i] = ch[i];
 							ch[EMERGENCY_CH-1] = Diff;
+						}
+
+						else if(i == COIL_CH-1) {
+							ch_[i] = ch[i];
+							ch[COIL_CH-1] = Diff;
 						}
 
 						ch_count++;

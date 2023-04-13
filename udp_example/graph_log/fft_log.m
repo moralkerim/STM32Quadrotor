@@ -5,10 +5,11 @@ function  [fft_mag,f] = fft_log(enum,fs,log_mat)
     f = fs*(0:N/2-1)/N;
     fft_mag = abs(fft_oneSide)/(N/2);
     
-    figure
+    %figure
     plot(f,fft_mag);
     xlabel('Frequency (Hz)');
     ylabel('Amplitude');
     title('Frequency-domain plot');
+    hold on;
 end
 

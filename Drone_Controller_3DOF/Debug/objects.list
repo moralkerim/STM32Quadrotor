@@ -10,6 +10,7 @@
 "Core/Src/i2c.o"
 "Core/Src/main.o"
 "Core/Src/moving-median.o"
+"Core/Src/mspv2.o"
 "Core/Src/nrf24.o"
 "Core/Src/spi.o"
 "Core/Src/stm32f1xx_hal_msp.o"
