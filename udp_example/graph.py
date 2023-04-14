@@ -133,6 +133,11 @@ class Telem(Enum):
       bno_roll_rate=116
       bno_pitch_rate=117
       bno_yaw_rate=118
+      
+      of_quality = 119
+      of_motion_x = 120
+      of_motion_y = 121
+      of_range = 122
 
 exit = True      
 for telem in Telem:
@@ -198,8 +203,7 @@ def animate(i,data_enum):
         empty_socket(mySocket)
         
         try:
-            data_org = struct.unpack('<ffffffffffffHHHHffffffffffffffffffffffffffLBhhhhfffhhhffffffffffffHHHHHHHHHHHHHHHfffffffffffffffffffffffffffffffffffff', data)
-
+            data_org = struct.unpack('<ffffffffffffHHHHffffffffffffffffffffffffffLBhhhhfffhhhffffffffffffHHHHHHHHHHHHHHHfffffffffffffffffffffffffffffffffffffBiii', data)
             data_enum.append(data_org[telem_value-1])  
             #pitch.append(data_org[1])
             

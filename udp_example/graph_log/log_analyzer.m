@@ -7,7 +7,7 @@ zeytinlik = '19.01.2023.13.52.24.txt';
 swarm = 'swarm3.txt';
 swarm_coil = 'swarm_coil.txt';
 fine_log = '12.03.2023.17.49.47.txt';
-log_str = fine_log;
+log_str = 'of_calib.txt';
 %log_str = zeytinlik;
 
 format='(%f';

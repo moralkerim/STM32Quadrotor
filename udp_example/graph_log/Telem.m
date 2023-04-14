@@ -125,6 +125,11 @@ classdef Telem < uint32
 	  bno_roll_rate(116)
 	  bno_pitch_rate(117)
 	  bno_yaw_rate(118)
+
+      of_quality(119)
+      of_motion_x(120)
+      of_motion_y(121)
+      of_range(122)
       
    end
 end

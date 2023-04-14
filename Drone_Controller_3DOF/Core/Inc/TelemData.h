@@ -96,6 +96,13 @@ struct ch {
   uint16_t ch11;
 } __attribute__ ((packed));
 
+struct of_data {
+	uint8_t quality;
+	int32_t motion_x;
+	int32_t motion_y;
+	int32_t range;
+} __attribute__ ((packed));
+
 struct telem_pack {
   struct attitude attitude;
   struct attitude attitude_des;
@@ -122,6 +129,7 @@ struct telem_pack {
   struct S_angle S_yaw;
   struct attitude bno_attitude;
   struct attitude bno_rates;
+  struct of_data of_data;
 
 
 } __attribute__ ((packed));

@@ -26,15 +26,12 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "mspv2.hpp"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-struct OF_Msg {
-  int32_t motion_x;
-  int32_t motion_y;
-};
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -43,29 +40,13 @@ struct OF_Msg {
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-#define START_MSG 0x24
-#define RNG_MSG_L 0x01
-#define RNG_MSG_U 0x1f
-#define OF_MSG_L 0x02
-#define OF_MSG_U 0x1f
+
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint8_t inChar;
-uint8_t matek_msg[50];
-uint8_t count=0;
-uint16_t msg_type;
-uint16_t range_msg = RNG_MSG_U << 8 | RNG_MSG_L;
-uint16_t of_msg = OF_MSG_U << 8 | OF_MSG_L;
-int i = 0;
-bool reset;
-uint8_t size;
-int32_t distance;
-uint16_t payload_size;
-OF_Msg of_msg_str;
-uint8_t quality;
+MatekOF matek_of;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -76,53 +57,13 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-int32_t MatekDecodeRange(uint8_t* msg) {
-  int32_t distance = msg[9] | msg[10] << 8 | msg[11] << 16 | msg[12] << 24 ;
-  return distance;
-}
-
-OF_Msg MatekDecodeOF(uint8_t* msg) {
-  OF_Msg of_msg;
-  of_msg.motion_x = msg[9] | msg[10] << 8 | msg[11] << 16 | msg[12] << 24;
-  of_msg.motion_y = msg[13] | msg[14] << 8 | msg[15] << 16 | msg[16] << 24 ;
-  return of_msg;
-}
-
-uint16_t MatekDecodeOF2(uint8_t* msg) {
-  uint16_t mot_x = msg[9] | msg[10] << 8 | msg[11] << 16 | msg[12] << 24 ;
-  return mot_x;
-}
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	if(huart->Instance == huart1.Instance)
-	{
-
-		HAL_UART_Receive_DMA (&huart1, (uint8_t*)&inChar, 1);
-		count++;
-		if(inChar == START_MSG) {
-				count = 0;
-				matek_msg[count] = START_MSG;
-				if((matek_msg[12] | matek_msg[11] | matek_msg[10] | matek_msg[9]) != 0) {
-					msg_type = matek_msg[5] << 8 | matek_msg[4];
-					quality = matek_msg[8];
-					if(msg_type == range_msg) {
-						distance = MatekDecodeRange(matek_msg);
-						//payload_size = matek_msg[7] << 8 | matek_msg[6];
-
-					}
-
-					else if(msg_type == of_msg) {
-						of_msg_str = MatekDecodeOF(matek_msg);
-					}
-				}
-		}
-		else {
-			matek_msg[count] = inChar;
-		}
-
-
+	if(huart->Instance == matek_of.huart_of.Instance) {
+		matek_of.MatekRead2();
 	}
+
 }
 /* USER CODE END 0 */
 
@@ -160,24 +101,8 @@ int main(void)
   MX_TIM4_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-	HAL_UART_Receive_DMA (&huart1, (uint8_t*)&inChar, 1);
-	count++;
-	if(inChar == START_MSG) {
-			count = 0;
-			matek_msg[count] = START_MSG;
-			if((matek_msg[12] | matek_msg[11] | matek_msg[10] | matek_msg[9]) != 0) {
-				msg_type = matek_msg[5] << 8 | matek_msg[4];
-				quality = matek_msg[8];
-				if(msg_type == range_msg) {
-					distance = MatekDecodeRange(matek_msg);
-					payload_size = matek_msg[7] << 8 | matek_msg[6];
-
-				}
-			}
-	}
-	else {
-		matek_msg[count] = inChar;
-	}
+  matek_of.begin(huart1);
+  matek_of.MatekRead2();
   /* USER CODE END 2 */
 
   /* Infinite loop */

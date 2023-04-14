@@ -302,13 +302,13 @@ void Delay(long millis) {
 	}
 }
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-	if(huart->Instance == matek_of.huart_of.Instance)
-	{
-		matek_of.MatekRead();
-	}
-}
+//void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+//{
+//	if(huart->Instance == matek_of.huart_of.Instance)
+//	{
+//		matek_of.MatekRead2();
+//	}
+//}
 
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
@@ -414,7 +414,7 @@ int main(void)
   //GPSInit();
   HAL_Delay(1000);
   matek_of.begin(huart1);
-  matek_of.MatekRead();
+  matek_of.MatekRead2();
   //Ringbuf_init();
 
 	/***********NRF Ayarlari****************/
@@ -969,6 +969,12 @@ void TelemPack() {
 	  telem_pack.bno_rates.pitch = bno_gyro.y;
 	  telem_pack.bno_rates.yaw   = bno_gyro.z;
 
+	  telem_pack.of_data.quality = matek_of.of_msg_str.quality;
+	  telem_pack.of_data.range = matek_of.distance;
+	  telem_pack.of_data.motion_x = matek_of.of_msg_str.motion_x;
+	  telem_pack.of_data.motion_y = matek_of.of_msg_str.motion_y;
+
+
 	  memcpy(buf,&telem_pack,sizeof(telem_pack));
 }
 
@@ -1486,7 +1492,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  accY = AccOku(ACC_Y_ADDR);
 		  accZ = AccOku(ACC_Z_ADDR);
 
-
+		  matek_of.MatekRead2();
 //		  accX = (1+Sx) * accX + bx;
 //		  accY = (1+Sy) * accY + by;
 //		  accZ = (1+Sz) * accZ + bz;

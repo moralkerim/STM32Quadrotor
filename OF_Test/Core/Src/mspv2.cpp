@@ -21,7 +21,6 @@ void MatekOF::begin(UART_HandleTypeDef huart) {
 void MatekOF::MatekRead2() {
 	uint8_t start_index;
 	uint8_t in_msg[18];
-	HAL_UART_Receive_DMA(&huart_of, (uint8_t*)matek_msg2, 36);
 	for(int i=0; i<sizeof(matek_msg2); i++) {
 		if(matek_msg2[i] == START_MSG) {
 				start_index = i;
@@ -51,7 +50,7 @@ void MatekOF::MatekRead2() {
 			//Pix2Meter();
 		}
 	}
-
+	HAL_UART_Receive_DMA(&huart_of, (uint8_t*)matek_msg2, 36);
 }
 
 void MatekOF::MatekRead() {

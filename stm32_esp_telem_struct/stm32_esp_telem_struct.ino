@@ -8,24 +8,24 @@
 #include "TelemData.h"
 
 
-#define WIFI_SSID "UAV"
-#define WIFI_PASS "A9A997B60FE11"
+//#define WIFI_SSID "UAV"
+//#define WIFI_PASS "A9A997B60FE11"
 
 
-/*
+
 #define WIFI_SSID "Ecospark_2.4GHz"
 #define WIFI_PASS "Jasperkid1213"
-*/
+
 
 //#define WIFI_SSID "Kerim"
 //#define WIFI_PASS "wikiboy123"
 
 
 //LAB
-IPAddress server_ip(192, 168, 1, 43);
+//IPAddress server_ip(192, 168, 1, 43);
 
 //İşyeri
-//IPAddress server_ip(192, 168, 1, 35);
+IPAddress server_ip(192, 168, 1, 34);
 //192.168.43.152
 
 //Phone
