@@ -1,5 +1,5 @@
 d = log_mat(:,Telem.of_range)/1000;
-xp = log_mat(:,Telem.of_motion_y);
+xp = log_mat(:,Telem.of_motion_x);
 a = deg2rad(42);
 W = 30;
 K=1;

@@ -632,7 +632,7 @@ void checkMode(int mod_ch) {
 	  if(mod_ch < 1400) {
 
 		  controller.mod = STABILIZE;
-//		  controller.z0 = EKF.alt_gnd;
+		  controller.z0 = EKF.alt_gnd;
 //		  controller.x0 = EKF.x;
 //		  controller.y0 = EKF.y;
 		  controller.p_alt.reset();
@@ -643,8 +643,7 @@ void checkMode(int mod_ch) {
 	  else if (mod_ch >=1400 && mod_ch <1700) {
 		  //Run (struct state state, struct state state_des, float z_vel, float z0, float z, float ch3),
 		 // controller.mod = LOITER;
-		  controller.mod = STABILIZE;
-
+		  controller.mod = ALT_HOLD;
 		  z0 = controller.p_alt.zi;
 
 	  }
@@ -1360,6 +1359,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		controller_counter++;
 		camera_counter++;
 		mag_counter++;
+		sonar_counter++;
 
 #ifdef UAV1
 
@@ -1382,56 +1382,13 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 
 		}
 
-		if(camera_counter == 40) {
-			  camera_counter = 0;
-			  memcpy(&cam_data_20, &cam_data, sizeof(cam_data));
-			  EKF.camx = (float)cam_data.y/100.0;
-
-			  if(!cam_data.detected) {
-				  EKF.Qc = 9e9;
-			  }
-
-			  else {
-				  EKF.Qc = 2.7e-2;
-			  }
+		if(sonar_counter == SONAR_CLOCK) {
+			sonar_counter = 0;
+			//matek_of.MatekRead2();
+			EKF.sonar_range = matek_of.distance/1000.0;
+			EKF.SonarHandle();
 		}
 
-		if(get_ucounter() == 1) {
-			request_range();
-			//sonar_range = getRange();
-		}
-
-
-		else if (get_ucounter() == SONAR_CLOCK_RATE) {
-
-		  sonar_range = getRange();
-		  sonar_alt_ = sonar_alt;
-		  sonar_vel_ = sonar_vel;
-
-		  float sonar_roll = abs(deg2rad*state.angles[0]);
-		  float sonar_pitch = abs(deg2rad*state.angles[1]);
-		  sonar_alt = (float)sonar_range/100.0 * cos(sonar_roll)* cos(sonar_pitch);
-		  float sonar_st = (float)(1.0/SONAR_CLOCK);
-		  sonar_vel = (sonar_alt - sonar_alt_)/sonar_st;
-
-
-		  if (abs(sonar_vel) > 7) {
-			  sonar_alt = sonar_alt_;
-			  sonar_vel = sonar_vel_;
-		  }
-
-		  if(sonar_alt > 6 || sonar_alt < 0.3) {
-			  EKF.Qs = 9e9;
-			  EKF.salt = 50;
-		  }
-
-		  else {
-			  EKF.Qs = 0.25;
-			  EKF.salt = 1;
-		  }
-
-
-		}
 
 		if(get_b_counter() == 1) {
 			write_ut();
@@ -1465,8 +1422,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  gyroX = (GyroOku(GYRO_X_ADDR)- GyroXh)/14.375 ;
 		  gyroY = (GyroOku(GYRO_Y_ADDR)- GyroYh)/14.375 ;
 		  gyroZ = (GyroOku(GYRO_Z_ADDR)- GyroZh)/14.375 ;
-		  //gyroX_a_x = (GyroOku(GYRO_X_ADDR)-gyro_e_x)/14.375;
-		  //gyroX_a += gyroX_a_x * st;
+
 
 #ifdef BMO_DEBUG
 		  v = bno055_getVectorEuler();
@@ -1491,11 +1447,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  accX = AccOku(ACC_X_ADDR);
 		  accY = AccOku(ACC_Y_ADDR);
 		  accZ = AccOku(ACC_Z_ADDR);
-
 		  matek_of.MatekRead2();
-//		  accX = (1+Sx) * accX + bx;
-//		  accY = (1+Sy) * accY + by;
-//		  accZ = (1+Sz) * accZ + bz;
 
 
 		  float g = 9.81;
@@ -1588,13 +1540,6 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim) {
 		  state.rates[1] = EKF.state.rates[1];
 		  state.rates[2] = EKF.state.rates[2];
 
-//		  state.angles[0] = bno_dat.x;
-//		  state.angles[1] = bno_dat.y;
-//		  state.angles[2] = bno_dat.z;
-//
-//		  state.rates[0] = bno_gyro.x;
-//		  state.rates[1] = bno_gyro.y;
-//		  state.rates[2] = bno_gyro.z;
 
 		   checkMode(ch[MOD_CH-1]);
 

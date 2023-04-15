@@ -52,6 +52,9 @@ class MatekOF {
 		uint16_t flow_msg  =  OF_MSG_U << 8 | OF_MSG_L;
 		uint8_t matek_msg2[36];
 
+		unsigned long flow_time_, flow_time;
+		unsigned short flow_time_diff;
+
 	public:
 		MatekOF();
 		void MatekRead(void);

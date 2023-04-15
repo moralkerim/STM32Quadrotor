@@ -21,7 +21,6 @@ void MatekOF::begin(UART_HandleTypeDef huart) {
 void MatekOF::MatekRead2() {
 	uint8_t start_index;
 	uint8_t in_msg[18];
-	HAL_UART_Receive_DMA(&huart_of, (uint8_t*)matek_msg2, 36);
 	for(int i=0; i<sizeof(matek_msg2); i++) {
 		if(matek_msg2[i] == START_MSG) {
 				start_index = i;
@@ -30,6 +29,9 @@ void MatekOF::MatekRead2() {
 		}
 	msg_type = matek_msg2[(start_index+5)%36] << 8 | matek_msg2[(start_index+4)%36];
 	if(msg_type == rng_msg) {
+		flow_time_ = flow_time;
+		flow_time = HAL_GetTick();
+		flow_time_diff = flow_time-flow_time_;
 		for(int i=start_index; i<start_index+14; i++) {
 			in_msg[i - start_index] = matek_msg2[i%36];
 		}
@@ -42,6 +44,7 @@ void MatekOF::MatekRead2() {
 	}
 
 	else if(msg_type == flow_msg) {
+
 		for(int i=start_index; i<start_index+18; i++) {
 			in_msg[i - start_index] = matek_msg2[i%36];
 		}
@@ -51,6 +54,7 @@ void MatekOF::MatekRead2() {
 			//Pix2Meter();
 		}
 	}
+	HAL_UART_Receive_DMA(&huart_of, (uint8_t*)matek_msg2, 36);
 
 }
 
@@ -63,6 +67,9 @@ void MatekOF::MatekRead() {
 					msg_type = matek_msg[5] << 8 | matek_msg[4];
 					quality = matek_msg[8];
 					if(msg_type == rng_msg) {
+						flow_time_ = flow_time;
+						flow_time = HAL_GetTick();
+						flow_time_diff = flow_time-flow_time_;
 						int32_t meas_dist  = MatekDecodeRange(matek_msg);
 						if(CheckRange(meas_dist)) {
 							distance = meas_dist;
@@ -72,6 +79,7 @@ void MatekOF::MatekRead() {
 					}
 
 					else if(msg_type == flow_msg) {
+
 						OF_Msg of_msg_proto = MatekDecodeOF(matek_msg);
 						if(CheckMotion(of_msg_proto)) {
 							of_msg_str = of_msg_proto;
